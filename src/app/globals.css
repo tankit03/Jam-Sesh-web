@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.bg-gradient-auth {
+  background: linear-gradient(180deg, #492B62 0%, #1E1E2C 42%, #39214D 68%, #1E1E25 92%);
+}
