@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Feed from '@/components/Feed'
 
 export default function HomePage() {
   return (
@@ -10,9 +11,8 @@ export default function HomePage() {
         <Link href="/profile">Profile</Link>
         <Link href="/create-post">Create Post</Link>
       </nav>
-      <main className="flex flex-col items-center justify-center flex-1">
-        <h1 className="text-3xl font-bold mb-2">Home Page</h1>
-        <p className="text-gray-400">This is a blank home page for Jam Sesh.</p>
+      <main className="flex flex-col items-center justify-center flex-1 w-full px-4">
+        <Feed />
       </main>
     </div>
   )
