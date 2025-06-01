@@ -8,9 +8,10 @@ export type Post = {
   title: string;
   body: string;
   created_at: string;
+  location?: string;
 };
 
-export default function Feed() {
+export default function Feed({ location = 'All' }: { location?: string }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,10 +20,14 @@ export default function Feed() {
     const fetchPosts = async () => {
       setLoading(true);
       setError(null);
-      const { data, error } = await supabase
+      let query = supabase
         .from("posts")
-        .select("id, title, body, created_at")
+        .select("id, title, body, created_at, location")
         .order("created_at", { ascending: false });
+      if (location && location !== 'All') {
+        query = query.eq('location', location);
+      }
+      const { data, error } = await query;
       if (error) {
         setError(error.message);
       } else {
@@ -31,7 +36,7 @@ export default function Feed() {
       setLoading(false);
     };
     fetchPosts();
-  }, []);
+  }, [location]);
 
   if (loading) return <div className="text-gray-400">Loading feed...</div>;
   if (error) return <div className="text-red-400">Error: {error}</div>;
@@ -46,6 +51,9 @@ export default function Feed() {
             <div className="text-lg font-bold mb-1">{post.title}</div>
             <div className="text-gray-300 mb-2">{post.body}</div>
             <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</div>
+            {post.location && (
+              <div className="text-xs text-[#3d00b6] mt-1">{post.location}</div>
+            )}
           </div>
         ))
       )}
