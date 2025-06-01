@@ -27,6 +27,10 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(MOCK_PROFILE.bio)
   const [isEditingBio, setIsEditingBio] = useState(false)
   const [bioDraft, setBioDraft] = useState(bio)
+  const [tags, setTags] = useState(MOCK_PROFILE.tags)
+  const [isEditingTags, setIsEditingTags] = useState(false)
+  const [tagsDraft, setTagsDraft] = useState(tags)
+  const [newTag, setNewTag] = useState('')
 
   // Use mock profile for now
   const profile = { ...MOCK_PROFILE, avatarUrl }
@@ -174,17 +178,89 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div>{bio}</div>
+            bio.trim() ? (
+              <div>{bio}</div>
+            ) : (
+              <div className="text-gray-400 italic">No bio yet.</div>
+            )
           )}
         </div>
         {/* Tags Section */}
         <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6 mb-6">
-          <div className="font-semibold mb-2">Tags</div>
-          <div className="flex flex-wrap gap-2">
-            {profile.tags.map((tag) => (
-              <span key={tag} className="bg-[#3d00b6] px-3 py-1 rounded-full text-sm">{tag}</span>
-            ))}
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-semibold">Tags</div>
+            {!isEditingTags && (
+              <button
+                className="flex items-center gap-1 px-3 py-1 rounded bg-[#3d00b6] text-white hover:bg-[#7F5AF0] text-xs font-medium shadow-sm transition-colors"
+                onClick={() => { setTagsDraft(tags); setIsEditingTags(true); }}
+              >
+                Edit
+              </button>
+            )}
           </div>
+          {isEditingTags ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tagsDraft.length === 0 ? (
+                  <span className="text-gray-400 italic">No tags yet.</span>
+                ) : (
+                  tagsDraft.map((tag, idx) => (
+                    <span key={tag} className="bg-[#3d00b6] px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                      {tag}
+                      <button
+                        className="ml-1 text-xs text-white bg-[#ff3ec8] rounded-full w-4 h-4 flex items-center justify-center hover:bg-[#ff3ec8]/80"
+                        onClick={() => setTagsDraft(tagsDraft.filter((_, i) => i !== idx))}
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2 mb-2">
+                <input
+                  className="rounded bg-[#1a1333] text-white p-2 border border-[#3d00b6] text-sm"
+                  type="text"
+                  placeholder="Add tag"
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && newTag.trim()) { setTagsDraft([...tagsDraft, newTag.trim()]); setNewTag(''); e.preventDefault(); } }}
+                />
+                <button
+                  className="px-3 py-1 rounded bg-[#3d00b6] text-white hover:bg-[#7F5AF0] text-xs font-medium"
+                  type="button"
+                  onClick={() => { if (newTag.trim()) { setTagsDraft([...tagsDraft, newTag.trim()]); setNewTag(''); } }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="px-4 py-1 rounded bg-[#3d00b6] text-white hover:bg-[#7F5AF0] text-sm"
+                  onClick={() => { setTags(tagsDraft); setIsEditingTags(false); }}
+                >
+                  Save
+                </button>
+                <button
+                  className="px-4 py-1 rounded bg-gray-600 text-white hover:bg-gray-500 text-sm"
+                  onClick={() => setIsEditingTags(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            tags.length === 0 ? (
+              <div className="text-gray-400 italic">No tags yet.</div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span key={tag} className="bg-[#3d00b6] px-3 py-1 rounded-full text-sm">{tag}</span>
+                ))}
+              </div>
+            )
+          )}
         </div>
         {/* Post History Section */}
         <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6">
