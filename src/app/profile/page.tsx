@@ -3,10 +3,30 @@
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { useState, useRef } from 'react'
+
+const MOCK_PROFILE = {
+  avatarUrl: 'https://ui-avatars.com/api/?name=Jam+User',
+  username: 'jamuser',
+  email: 'jamuser@email.com',
+  bio: 'Musician. Dreamer. Always down to jam!',
+  tags: ['guitar', 'indie', 'producer'],
+  posts: [
+    { id: 1, title: 'Looking for a drummer', date: '2024-06-01' },
+    { id: 2, title: 'House show this Friday!', date: '2024-05-28' },
+  ],
+}
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const router = useRouter()
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState(MOCK_PROFILE.avatarUrl)
+  const [isAvatarHovered, setIsAvatarHovered] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Use mock profile for now
+  const profile = { ...MOCK_PROFILE, avatarUrl }
 
   if (loading) {
     return (
@@ -45,6 +65,31 @@ export default function ProfilePage() {
     )
   }
 
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await signOut()
+      router.push('/')
+    } catch (err) {
+      setLoggingOut(false)
+      alert('Error logging out')
+    }
+  }
+
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setAvatarUrl(url)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#1a1333] text-white">
       <nav className="w-full flex gap-6 text-lg px-8 py-4 border-b border-[#3d00b6] bg-[#1a1333]">
@@ -52,11 +97,68 @@ export default function ProfilePage() {
         <Link href="/profile">Profile</Link>
         <Link href="/create-post">Create Post</Link>
       </nav>
-      <main className="flex flex-col items-center justify-center flex-1">
-        <h1 className="text-3xl font-bold mb-2">Profile Page</h1>
-        <p className="text-gray-400 mb-4">Logged in as:</p>
-        <div className="bg-[#22203a] px-6 py-3 rounded-lg text-lg font-mono">
-          {user.email}
+      <main className="flex flex-col items-center justify-center flex-1 w-full px-4">
+        {/* Profile Header */}
+        <div className="flex flex-col items-center gap-4 w-full max-w-xl py-8">
+          <div
+            className={`relative cursor-pointer transition-transform duration-200 ${isAvatarHovered ? 'scale-105' : ''}`}
+            onMouseEnter={() => setIsAvatarHovered(true)}
+            onMouseLeave={() => setIsAvatarHovered(false)}
+            onClick={handleAvatarClick}
+          >
+            <img
+              src={profile.avatarUrl}
+              alt="Profile avatar"
+              className="w-28 h-28 rounded-full border-4 border-[#3d00b6] object-cover"
+            />
+            {isAvatarHovered && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-full shadow-lg shadow-[#3d00b6]/40 text-sm font-semibold text-white">
+                Change
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </div>
+          <div className="text-2xl font-bold">{profile.username}</div>
+          <div className="text-gray-400">{profile.email}</div>
+          <button
+            className="px-6 py-2 rounded bg-[#ff3ec8] text-white hover:bg-[#ff3ec8]/80 transition-colors disabled:opacity-60 mt-2"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
+            {loggingOut ? 'Logging out...' : 'Log Out'}
+          </button>
+        </div>
+        {/* Bio Section */}
+        <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6 mb-6">
+          <div className="font-semibold mb-2">Bio</div>
+          <div>{profile.bio}</div>
+        </div>
+        {/* Tags Section */}
+        <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6 mb-6">
+          <div className="font-semibold mb-2">Tags</div>
+          <div className="flex flex-wrap gap-2">
+            {profile.tags.map((tag) => (
+              <span key={tag} className="bg-[#3d00b6] px-3 py-1 rounded-full text-sm">{tag}</span>
+            ))}
+          </div>
+        </div>
+        {/* Post History Section */}
+        <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6">
+          <div className="font-semibold mb-2">Post History</div>
+          <ul className="space-y-2">
+            {profile.posts.map((post) => (
+              <li key={post.id} className="border-b border-[#3d00b6]/30 pb-2 last:border-b-0">
+                <div className="font-medium">{post.title}</div>
+                <div className="text-xs text-gray-400">{post.date}</div>
+              </li>
+            ))}
+          </ul>
         </div>
       </main>
     </div>
