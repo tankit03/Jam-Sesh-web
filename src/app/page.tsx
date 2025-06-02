@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Feed from '@/components/Feed'
 import { useState } from 'react'
-import Select from 'react-select'
+import dynamic from 'next/dynamic'
 
 const cityOptions = [
   { value: 'Portland', label: 'Portland' },
@@ -13,6 +13,8 @@ const cityOptions = [
   // ...add more as needed
 ]
 type OptionType = { value: string; label: string };
+
+const Select = dynamic(() => import('react-select'), { ssr: false })
 
 export default function HomePage() {
   const [location, setLocation] = useState('')
@@ -32,7 +34,10 @@ export default function HomePage() {
               inputId="location-select"
               options={cityOptions}
               value={cityOptions.find(opt => opt.value === location) || null}
-              onChange={(opt: OptionType | null) => setLocation(opt ? opt.value : '')}
+              onChange={(newValue) => {
+                const opt = newValue as OptionType | null;
+                setLocation(opt ? opt.value : '');
+              }}
               isClearable
               placeholder="Type a city..."
               classNamePrefix="react-select"
