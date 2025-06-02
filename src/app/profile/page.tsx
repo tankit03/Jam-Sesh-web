@@ -25,19 +25,24 @@ export default function ProfilePage() {
   const [savingBio, setSavingBio] = useState(false)
   const [savingTags, setSavingTags] = useState(false)
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [location, setLocation] = useState('')
+  const [isEditingLocation, setIsEditingLocation] = useState(false)
+  const [locationDraft, setLocationDraft] = useState('')
+  const [savingLocation, setSavingLocation] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
       setProfileLoading(true)
       supabase
         .from('profiles')
-        .select('username, bio, tags')
+        .select('username, bio, tags, location')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
           setProfileUsername(data?.username || null)
           setBio(data?.bio || '')
           setTags(data?.tags || [])
+          setLocation(data?.location || '')
           setProfileLoading(false)
           setProfileLoaded(true)
         })
@@ -239,6 +244,66 @@ export default function ProfilePage() {
                   <div>{bio}</div>
                 ) : (
                   <div className="text-gray-400 italic">No bio yet.</div>
+                )
+              )}
+            </div>
+            {/* Location Section */}
+            <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6 mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-semibold">Location</div>
+                {!isEditingLocation && (
+                  <button
+                    className="flex items-center gap-1 px-3 py-1 rounded bg-[#3d00b6] text-white hover:bg-[#7F5AF0] text-xs font-medium shadow-sm transition-colors"
+                    onClick={() => { setLocationDraft(location); setIsEditingLocation(true); }}
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              {isEditingLocation ? (
+                <div className="flex flex-col gap-2">
+                  <input
+                    className="w-full rounded bg-[#1a1333] text-white p-2 border border-[#3d00b6]"
+                    type="text"
+                    value={locationDraft}
+                    onChange={e => setLocationDraft(e.target.value)}
+                    placeholder="Enter your city or location"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      className="px-4 py-1 rounded bg-[#3d00b6] text-white hover:bg-[#7F5AF0] text-sm disabled:opacity-60"
+                      onClick={async () => {
+                        setSavingLocation(true)
+                        const { error } = await supabase
+                          .from('profiles')
+                          .update({ location: locationDraft })
+                          .eq('id', user.id)
+                        setSavingLocation(false)
+                        if (!error) {
+                          setLocation(locationDraft)
+                          setIsEditingLocation(false)
+                        } else {
+                          alert('Error saving location: ' + error.message)
+                        }
+                      }}
+                      disabled={savingLocation}
+                    >
+                      {savingLocation ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      className="px-4 py-1 rounded bg-gray-600 text-white hover:bg-gray-500 text-sm"
+                      onClick={() => setIsEditingLocation(false)}
+                      disabled={savingLocation}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                location.trim() ? (
+                  <div>{location}</div>
+                ) : (
+                  <div className="text-gray-400 italic">No location set.</div>
                 )
               )}
             </div>
