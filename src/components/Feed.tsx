@@ -9,6 +9,10 @@ export type Post = {
   body: string;
   created_at: string;
   location?: string;
+  profiles?: {
+    username?: string;
+    email?: string;
+  };
 };
 
 export default function Feed({ location = 'All' }: { location?: string }) {
@@ -22,7 +26,7 @@ export default function Feed({ location = 'All' }: { location?: string }) {
       setError(null);
       let query = supabase
         .from("posts")
-        .select("id, title, body, created_at, location")
+        .select("id, title, body, created_at, location, profiles(username, email)")
         .order("created_at", { ascending: false });
       if (location && location !== 'All') {
         query = query.eq('location', location);
@@ -31,7 +35,11 @@ export default function Feed({ location = 'All' }: { location?: string }) {
       if (error) {
         setError(error.message);
       } else {
-        setPosts(data || []);
+        const normalized = (data || []).map((post: any) => ({
+          ...post,
+          profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles,
+        }));
+        setPosts(normalized);
       }
       setLoading(false);
     };
@@ -49,6 +57,7 @@ export default function Feed({ location = 'All' }: { location?: string }) {
         posts.map((post) => (
           <div key={post.id} className="bg-[#22203a] rounded-lg p-6 shadow border border-[#3d00b6]/20">
             <div className="text-lg font-bold mb-1">{post.title}</div>
+            <div className="text-xs text-gray-400 mb-1">by {post.profiles?.username || post.profiles?.email || 'Unknown'}</div>
             <div className="text-gray-300 mb-2">{post.body}</div>
             <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</div>
             {post.location && (
