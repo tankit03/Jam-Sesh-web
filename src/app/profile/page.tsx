@@ -29,13 +29,15 @@ export default function ProfilePage() {
   const [isEditingLocation, setIsEditingLocation] = useState(false)
   const [locationDraft, setLocationDraft] = useState('')
   const [savingLocation, setSavingLocation] = useState(false)
+  const [userPosts, setUserPosts] = useState<any[]>([])
+  const [postsLoading, setPostsLoading] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
       setProfileLoading(true)
       supabase
         .from('profiles')
-        .select('username, bio, tags, location')
+        .select('username, bio, tags, location, avatar_url')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
@@ -43,8 +45,24 @@ export default function ProfilePage() {
           setBio(data?.bio || '')
           setTags(data?.tags || [])
           setLocation(data?.location || '')
+          setAvatarUrl(data?.avatar_url || '')
           setProfileLoading(false)
           setProfileLoaded(true)
+        })
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (user?.id) {
+      setPostsLoading(true)
+      supabase
+        .from('posts')
+        .select('id, title, body, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => {
+          setUserPosts(data || [])
+          setPostsLoading(false)
         })
     }
   }, [user])
@@ -103,11 +121,45 @@ export default function ProfilePage() {
     }
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0]
     if (file) {
-      const url = URL.createObjectURL(file)
-      setAvatarUrl(url)
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(`${user.id}/${file.name}`, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (error) {
+        console.error('Error uploading avatar:', error.message)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(`${user.id}/${file.name}`);
+
+      // Update the profile in Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating avatar_url in profile:', updateError.message);
+        return;
+      }
+
+      // Refetch the profile to get the latest avatar_url
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      setAvatarUrl(((profile?.avatar_url || publicUrl) + '?t=' + Date.now()));
     }
   }
 
@@ -130,6 +182,22 @@ export default function ProfilePage() {
       // Handle success
     } catch (err) {
       console.error('Error creating post:', err)
+      // Handle error
+    }
+  }
+
+  const handlePostDeletion = async (postId: string) => {
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', postId)
+      if (error) {
+        console.error('Error deleting post:', error.message)
+        alert('Error deleting post: ' + error.message)
+      } else {
+        console.log('Post deleted successfully')
+        // Handle success
+      }
+    } catch (err) {
+      console.error('Error deleting post:', err)
       // Handle error
     }
   }
@@ -157,6 +225,7 @@ export default function ProfilePage() {
                     src={avatarUrl}
                     alt="Profile avatar"
                     className="w-28 h-28 rounded-full border-4 border-[#3d00b6] object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/default-avatar.svg'; }}
                   />
                 ) : (
                   <div className="w-28 h-28 rounded-full border-4 border-[#3d00b6] bg-[#3d00b6] flex items-center justify-center text-3xl font-bold text-white">
@@ -402,13 +471,28 @@ export default function ProfilePage() {
             {/* Post History Section */}
             <div className="w-full max-w-xl bg-[#22203a] rounded-lg p-6">
               <div className="font-semibold mb-2">Post History</div>
-              <ul className="space-y-2">
-                {/* Replace with actual posts from user */}
-                <li className="border-b border-[#3d00b6]/30 pb-2 last:border-b-0">
-                  <div className="font-medium">Placeholder Post Title</div>
-                  <div className="text-xs text-gray-400">Placeholder Date</div>
-                </li>
-              </ul>
+              {postsLoading ? (
+                <div className="text-gray-400 italic">Loading posts...</div>
+              ) : userPosts.length === 0 ? (
+                <div className="text-gray-400 italic">No posts yet.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {userPosts.map((post) => (
+                    <li key={post.id} className="border-b border-[#3d00b6]/30 pb-2 last:border-b-0">
+                      <div className="font-medium">{post.title}</div>
+                      <div className="text-xs text-gray-400 mb-1">by {profileUsername || user.email}</div>
+                      <div className="text-gray-300 text-sm mb-1">{post.body}</div>
+                      <div className="text-xs text-gray-400">{new Date(post.created_at).toLocaleString()}</div>
+                      <button
+                        className="text-xs text-gray-400 hover:text-gray-300 ml-2"
+                        onClick={() => handlePostDeletion(post.id)}
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </>
         ) : (
