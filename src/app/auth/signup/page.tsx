@@ -42,7 +42,7 @@ export default function SignUpPage() {
 
     try {
       await signUp(email, password, username)
-      router.push('/')
+      router.push('/setup')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     }
