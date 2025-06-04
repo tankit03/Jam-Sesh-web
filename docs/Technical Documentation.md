@@ -2,6 +2,7 @@
 
 ---
 
+
 ## 1. Codebase Overview & Structure
 
 JamSesh is a web application built with Next.js (React), TypeScript, Tailwind CSS, and Supabase. The codebase is organized for clarity and rapid prototyping.
@@ -87,29 +88,36 @@ const { data, error } = await supabase
 
 ## 5. Architecture & Diagrams
 
-**Architecture Overview:**
-- **Frontend:** Next.js app (React, TypeScript, Tailwind CSS)
-- **Backend:** Supabase (Postgres DB, Auth, Storage)
-- **Deployment:** Vercel (recommended)
+JamSesh is a modern web application designed for musicians to connect and collaborate. The architecture is simple, scalable, and leverages managed services to minimize backend complexity.
 
-**Data Flow:**
-1. User interacts with the Next.js frontend
-2. Frontend uses Supabase client SDK to read/write data
-3. Supabase handles auth, database, and storage
-4. All data is secured with RLS policies
+- **Frontend:** Built with Next.js (React), TypeScript, and Tailwind CSS. Handles all user interaction, routing, and UI rendering.
+- **Backend:** Powered by Supabase, which provides authentication, a Postgres database, and file storage. All data operations are performed via the Supabase client SDK.
+- **Deployment:** The frontend is intended for deployment on Vercel (or similar platforms).
 
-**Diagram:**
-```
-[User] ⇄ [Next.js Frontend] ⇄ [Supabase (Auth, DB, Storage)]
-```
+### Architecture Diagram
+
+Below is a visual representation of the JamSesh system architecture:
+
+![JamSesh Architecture Diagram](docs/JamSesh_Architecture_Diagram.png)
+
+### Data Flow
+
+1. **User** interacts with the web app via their browser.
+2. **Next.js Frontend** handles UI, routes, and calls Supabase for data, authentication, and storage.
+3. **Supabase** manages:
+   - **Auth:** User sign-up, login, and session management
+   - **Database:** Storing user profiles, posts, etc.
+   - **Storage:** Media files (avatars, images)
+4. All data is protected by Row Level Security (RLS) policies in Supabase.
 
 ---
 
 ## 6. Known Issues & Future Work
 - No automated tests (manual testing only)
 - No production deployment (prototype only)
-- Some features (group profiles, interactive poster board, music integration) are stretch goals
+- Some features (group profiles, interactive poster board, music integration) are stretch goals. Check Features And Future Work for more info
 - UI/UX polish and accessibility improvements are ongoing
+- **Documentation may become outdated as the project evolves.** Please review and update this document as features or architecture change.
 
 ---
 
