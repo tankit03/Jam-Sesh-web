@@ -6,6 +6,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Modal from '@/components/Modal'
 import PostForm from '@/components/PostForm'
+import { useAuth } from '@/contexts/AuthContext'
 
 const cityOptions = [
   { value: 'Portland', label: 'Portland' },
@@ -23,6 +24,8 @@ export default function HomePage() {
   const [showPostModal, setShowPostModal] = useState(false)
   const [editPost, setEditPost] = useState<any | null>(null)
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
+  const { user } = useAuth()
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
 
   return (
     <div className="min-h-screen flex flex-col bg-[#1a1333] text-white">
@@ -70,7 +73,13 @@ export default function HomePage() {
         <div className="w-full max-w-2xl mx-auto flex justify-center mb-6">
           <button
             className="px-6 py-2 rounded bg-[#ff3ec8] text-white font-bold text-lg shadow hover:bg-[#ff3ec8]/80 transition-colors"
-            onClick={() => setShowPostModal(true)}
+            onClick={() => {
+              if (user) {
+                setShowPostModal(true)
+              } else {
+                setShowAuthPrompt(true)
+              }
+            }}
           >
             Make a Post
           </button>
@@ -89,6 +98,20 @@ export default function HomePage() {
               category: editPost.category,
             } : {}}
           />
+        </Modal>
+        {/* Auth Prompt Modal */}
+        <Modal isOpen={showAuthPrompt} onClose={() => setShowAuthPrompt(false)}>
+          <div className="flex flex-col items-center gap-4 p-4">
+            <div className="text-lg font-bold text-white">You must be logged in to make a post.</div>
+            <div className="flex gap-4">
+              <Link href="/auth/login">
+                <button className="px-4 py-2 rounded bg-[#3d00b6] text-white font-semibold hover:bg-[#7F5AF0]">Log In</button>
+              </Link>
+              <Link href="/auth/signup">
+                <button className="px-4 py-2 rounded bg-[#ff3ec8] text-white font-semibold hover:bg-[#ff3ec8]/80">Sign Up</button>
+              </Link>
+            </div>
+          </div>
         </Modal>
         <div className="flex-1 flex flex-col justify-center">
           <Feed

@@ -121,7 +121,21 @@ export default function Feed({ location = 'All', onEditPost }: { location?: stri
                 )}
               </div>
             </div>
-            <div className="text-gray-300 mb-2">{post.body}</div>
+            {/* Custom styles for links in post body */}
+            <style>{`
+              .post-body a {
+                color: #7F5AF0;
+                font-weight: 600;
+                text-decoration: underline;
+                transition: color 0.2s;
+              }
+              .post-body a:hover {
+                color: #ff3ec8;
+              }
+            `}</style>
+            {/* Render rich text HTML for post body */}
+            {/* eslint-disable-next-line react/no-danger */}
+            <div className="text-gray-300 mb-2 post-body" dangerouslySetInnerHTML={{ __html: post.body }} />
             <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</div>
             {post.location && (
               <div className="text-xs text-[#3d00b6] mt-1">{post.location}</div>

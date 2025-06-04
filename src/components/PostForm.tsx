@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import RichTextEditor from './RichTextEditor'
 
 const postCategories = [
   { value: 'general', label: 'General' },
@@ -103,13 +104,7 @@ export default function PostForm({
         maxLength={120}
         required
       />
-      <textarea
-        className="rounded bg-[#1a1333] text-white p-3 border border-[#3d00b6] focus:outline-none min-h-[120px]"
-        placeholder="Body (optional)"
-        value={body}
-        onChange={e => setBody(e.target.value)}
-        rows={5}
-      />
+      <RichTextEditor value={body} onChange={setBody} />
       <div>
         <label className="block mb-2 font-medium">Category</label>
         <select
