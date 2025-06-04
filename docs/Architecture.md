@@ -14,7 +14,7 @@ JamSesh is a modern web application designed for musicians to connect and collab
 
 Below is a visual representation of the JamSesh system architecture:
 
-![JamSesh Architecture Diagram](docs/JamSesh_Architecture_Diagram.png)
+![JamSesh Architecture Diagram](JamSesh_Architecture_Diagram.png)
 
 ## Data Flow
 
