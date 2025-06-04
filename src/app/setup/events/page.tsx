@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import localFont from 'next/font/local'
 import { supabase } from '@/lib/supabase'
 import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter } from 'react-icons/fa'
+import EventForm from '../create-event/EventForm'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -43,9 +44,18 @@ export default function AllEvents() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [editEvent, setEditEvent] = useState<Event | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEvents();
+    // Get current user ID
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id || null);
+    });
   }, []);
 
   const fetchEvents = async () => {
@@ -74,6 +84,38 @@ export default function AllEvents() {
     const matchesCategory = category ? event.category === category : true;
     return matchesSearch && matchesCategory;
   });
+
+  // Edit event handler
+  const handleEditSubmit = async (values: {
+    title: string;
+    body: string;
+    category: string;
+    media_url: string;
+    location: string;
+  }) => {
+    if (!editEvent) return;
+    setEditLoading(true);
+    setEditError(null);
+    setEditSuccess(false);
+    const { error } = await supabase
+      .from('posts')
+      .update({
+        title: values.title,
+        body: values.body,
+        category: values.category,
+        media_url: values.media_url,
+        location: values.location,
+      })
+      .eq('id', editEvent.id);
+    if (error) {
+      setEditError('Failed to update event.');
+    } else {
+      setEditSuccess(true);
+      setEditEvent(null);
+      fetchEvents();
+    }
+    setEditLoading(false);
+  };
 
   if (loading) {
     return (
@@ -158,11 +200,40 @@ export default function AllEvents() {
               <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
               <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
             </div>
+            {userId && event.user_id === userId && (
+              <button
+                className="mt-2 px-4 py-1 rounded bg-[#7F5AF0] text-white hover:bg-[#3d00b6] transition-colors"
+                onClick={() => setEditEvent(event)}
+              >
+                Edit
+              </button>
+            )}
           </div>
         ))}
       </div>
       {filteredEvents.length === 0 && (
         <p className={`text-gray-500 mt-8 ${spaceGroteskMed.className}`}>No events found. Try a different search or filter.</p>
+      )}
+      {/* Edit Modal */}
+      {editEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-[#1a1333] p-6 rounded-xl shadow-xl max-w-lg w-full relative">
+            <button
+              className="absolute top-2 right-2 text-white text-xl"
+              onClick={() => setEditEvent(null)}
+            >
+              &times;
+            </button>
+            <h2 className={`text-2xl font-bold mb-4 text-white ${russoOne.className}`}>Edit Event</h2>
+            <EventForm
+              initialValues={editEvent}
+              onSubmit={handleEditSubmit}
+              loading={editLoading}
+              error={editError}
+              success={editSuccess}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
