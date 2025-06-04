@@ -140,6 +140,18 @@ export default function AddEvent() {
     }
   };
 
+  const handleDelete = async (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', eventId);
+      if (error) throw error;
+      setEvents(events.filter(ev => ev.id !== eventId));
+      if (editingEvent && editingEvent.id === eventId) closeEditModal();
+    } catch (err: unknown) {
+      alert((err as Error).message || 'Failed to delete event');
+    }
+  };
+
   return (
     <div className="p-8">
       <h1 className={`text-4xl font-bold mb-4 text-white ${russoOne.className}`}>
@@ -173,29 +185,38 @@ export default function AddEvent() {
             {events.map((event) => (
               <div 
                 key={event.id}
-                className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:bg-white/20 transition-colors cursor-pointer"
+                className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3"
               >
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className={`text-xl text-white ${spaceGroteskMed.className}`}>{event.title}</h3>
-                    <button onClick={() => openEditModal(event)} aria-label="Edit event">
-                      <FaEdit className="text-white/50 hover:text-white/80" />
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <FaCalendarAlt className="mr-2" />
-                      {formatDate(event.created_at)}
-                    </div>
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <FaMapMarkerAlt className="mr-2" />
-                      {event.location}
-                    </div>
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <span className="mr-2">By:</span>
-                      {event.profiles?.username || 'Unknown'}
-                    </div>
-                  </div>
+                {/* Event Image */}
+                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2 flex items-center justify-center">
+                  {event.media_url ? (
+                    <img src={event.media_url} alt={event.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-gray-400 text-sm">{event.title}</span>
+                  )}
+                </div>
+                {/* Title */}
+                <h3 className={`text-xl font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h3>
+                {/* Description */}
+                {event.body && (
+                  <p className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxHeight: '3em', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
+                )}
+                {/* Location and Date */}
+                <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
+                  <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
+                  <span className="flex items-center"><FaCalendarAlt className="mr-1" />{formatDate(event.created_at)}</span>
+                </div>
+                {/* Username and Category */}
+                <div className="flex flex-wrap justify-center gap-2 items-center">
+                  <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
+                  <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
+                </div>
+                {/* Edit/Delete Buttons */}
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => openEditModal(event)} aria-label="Edit event">
+                    <FaEdit className="text-gray-400 hover:text-black" />
+                  </button>
+                  <button onClick={() => handleDelete(event.id)} aria-label="Delete event" className="text-red-400 hover:text-red-600 font-bold text-lg">&times;</button>
                 </div>
               </div>
             ))}
@@ -272,8 +293,9 @@ export default function AddEvent() {
                 />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between gap-2">
                 <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600">Cancel</button>
+                <button type="button" onClick={() => handleDelete(editingEvent.id)} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Delete</button>
                 <button type="submit" className="px-4 py-2 rounded bg-[#7F5AF0] text-white hover:bg-[#6841c6]" disabled={saving}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
