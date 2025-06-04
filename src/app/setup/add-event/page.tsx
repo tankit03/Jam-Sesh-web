@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import EventCard from '../events/EventCard';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -47,6 +48,7 @@ export default function AddEvent() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const initialFocusRef = useRef<HTMLInputElement>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (editingEvent && initialFocusRef.current) {
@@ -75,6 +77,7 @@ export default function AddEvent() {
 
         if (error) throw error;
         setEvents(data || []);
+        setUserId(session?.user.id || null);
       } catch (err) {
         console.error('Error fetching events:', err);
       } finally {
@@ -183,42 +186,7 @@ export default function AddEvent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div 
-                key={event.id}
-                className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3"
-              >
-                {/* Event Image */}
-                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2 flex items-center justify-center">
-                  {event.media_url ? (
-                    <img src={event.media_url} alt={event.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-400 text-sm">{event.title}</span>
-                  )}
-                </div>
-                {/* Title */}
-                <h3 className={`text-xl font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h3>
-                {/* Description */}
-                {event.body && (
-                  <p className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxHeight: '3em', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
-                )}
-                {/* Location and Date */}
-                <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
-                  <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-                  <span className="flex items-center"><FaCalendarAlt className="mr-1" />{formatDate(event.created_at)}</span>
-                </div>
-                {/* Username and Category */}
-                <div className="flex flex-wrap justify-center gap-2 items-center">
-                  <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
-                  <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
-                </div>
-                {/* Edit/Delete Buttons */}
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => openEditModal(event)} aria-label="Edit event">
-                    <FaEdit className="text-gray-400 hover:text-black" />
-                  </button>
-                  <button onClick={() => handleDelete(event.id)} aria-label="Delete event" className="text-red-400 hover:text-red-600 font-bold text-lg">&times;</button>
-                </div>
-              </div>
+              <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} />
             ))}
           </div>
         )}

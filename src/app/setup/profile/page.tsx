@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import localFont from 'next/font/local'
 import { FaCamera, FaMapMarkerAlt, FaCalendarAlt } from 'react-icons/fa'
+import EventCard from '../events/EventCard'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -37,10 +38,14 @@ export default function Profile() {
   const [hostedEvents, setHostedEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchProfileAndEvents()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id || null);
+    });
   }, [])
 
   const fetchProfileAndEvents = async () => {
@@ -140,20 +145,7 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {hostedEvents.length === 0 && <p className="text-gray-400">No hosted events yet.</p>}
           {hostedEvents.map(event => (
-            <div key={event.id} className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3">
-              {event.media_url && (
-                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2">
-                  <img src={event.media_url} alt={event.title} className="w-full h-full object-cover" />
-                </div>
-              )}
-              <h4 className={`text-lg font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h4>
-              <p className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxHeight: '3em', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
-              <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
-                <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-                <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.created_at).toLocaleDateString()}</span>
-              </div>
-              <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
-            </div>
+            <EventCard key={event.id} event={{ ...event, user_id: userId || '', profiles: { username: profile?.username || '' } }} currentUserId={userId} />
           ))}
         </div>
       </div>
