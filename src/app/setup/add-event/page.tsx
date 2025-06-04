@@ -25,6 +25,7 @@ interface Event {
   location: string;
   category: string;
   media_url: string;
+  user_id?: string;
   profiles?: {
     username: string;
   };
@@ -39,7 +40,7 @@ const allowedCategories = [
   'promotion',
 ];
 
-export default function AddEvent() {
+export default function MyEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -145,41 +146,27 @@ export default function AddEvent() {
 
   return (
     <div className="p-8">
-      <h1 className={`text-4xl font-bold mb-4 text-white ${russoOne.className}`}>
-        Create a New <span className="text-[#7F5AF0]">Event</span>
-      </h1>
-      <p className={`text-lg text-gray-300 mb-8 ${spaceGroteskMed.className}`}>
-        Plan your next JamSesh event.
-      </p>
-
-      <Link href="/setup/create-event">
-        <div className="max-w-sm bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:bg-white/20 transition-colors cursor-pointer">
-          <div className="border-2 border-dashed border-white/30 rounded-lg p-6 flex flex-col items-center justify-center text-center aspect-square">
-            <FaPlus size={40} className="text-white/50 mb-4" />
-            <p className={`text-xl text-white/50 ${spaceGroteskMed.className}`}>
-              + NEW EVENT
-            </p>
+      <h1 className={`text-3xl font-bold mb-2 text-white ${russoOne.className}`}>Your <span className="text-[#7F5AF0]">hosted events</span></h1>
+      <p className={`text-gray-300 mb-8 ${spaceGroteskMed.className}`}>This is where you can create a new event or find all the events you have created.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Link href="/setup/create-event" className="h-full w-full">
+          <div className="h-full w-full bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:bg-white/20 transition-colors cursor-pointer flex flex-col justify-center">
+            <div className="border-2 border-dashed border-white/30 rounded-lg p-6 flex flex-col items-center justify-center text-center aspect-square">
+              <FaPlus size={40} className="text-white/50 mb-4" />
+              <p className={`text-xl text-white/50 ${spaceGroteskMed.className}`}>+ NEW EVENT</p>
+            </div>
           </div>
-        </div>
-      </Link>
-
-      <div className="mt-12">
-        <h2 className={`text-2xl font-bold mb-6 text-white ${russoOne.className}`}>
-          Your <span className="text-[#7F5AF0]">Hosted Events</span>
-        </h2>
+        </Link>
         {loading ? (
-          <div className="text-white">Loading events...</div>
+          <div className="text-white col-span-full">Loading events...</div>
         ) : events.length === 0 ? (
-          <div className="text-white/70">No events created yet. Create your first event!</div>
+          <div className="text-white/70 col-span-full">No events created yet. Create your first event!</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} onEdit={editingEvent && editingEvent.id === event.id ? undefined : (userId && event.user_id === userId ? () => setEditingEvent(event) : undefined)} />
-            ))}
-          </div>
+          events.map((event) => (
+            <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} onEdit={editingEvent && editingEvent.id === event.id ? undefined : (userId && event.user_id === userId ? () => setEditingEvent(event) : undefined)} />
+          ))
         )}
       </div>
-
       {/* Edit Modal */}
       {editingEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
