@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { supabase } from '@/lib/supabase'
 import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter } from 'react-icons/fa'
 import EventForm from '../create-event/EventForm'
+import EventCard from './EventCard'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -24,7 +25,7 @@ interface Event {
   location: string;
   created_at: string;
   user_id: string;
-  profiles: {
+  profiles?: {
     username: string;
   };
 }
@@ -168,47 +169,12 @@ export default function AllEvents() {
       <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>Preview all events or filter by location and category</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((event) => (
-          <div
+          <EventCard
             key={event.id}
-            className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3"
-          >
-            {event.media_url && (
-              <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2">
-                <img
-                  src={event.media_url}
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <h2 className={`text-lg font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h2>
-            <div
-              className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden rich-text-content`}
-              style={{
-                maxHeight: '12em',
-                overflow: 'auto',
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-              }}
-              dangerouslySetInnerHTML={{ __html: event.body }}
-            />
-            <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
-              <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-              <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.created_at).toLocaleDateString()}</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 items-center">
-              <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
-              <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
-            </div>
-            {userId && event.user_id === userId && (
-              <button
-                className="mt-2 px-4 py-1 rounded bg-[#7F5AF0] text-white hover:bg-[#3d00b6] transition-colors"
-                onClick={() => setEditEvent(event)}
-              >
-                Edit
-              </button>
-            )}
-          </div>
+            event={{ ...event, profiles: event.profiles || { username: 'Anonymous' } }}
+            currentUserId={userId}
+            onEdit={userId && event.user_id === userId ? () => setEditEvent(event) : undefined}
+          />
         ))}
       </div>
       {filteredEvents.length === 0 && (
@@ -217,7 +183,7 @@ export default function AllEvents() {
       {/* Edit Modal */}
       {editEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-[#1a1333] p-6 rounded-xl shadow-xl max-w-lg w-full relative">
+          <div className="bg-[#1a1333] p-6 rounded-xl shadow-xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto">
             <button
               className="absolute top-2 right-2 text-white text-xl"
               onClick={() => setEditEvent(null)}

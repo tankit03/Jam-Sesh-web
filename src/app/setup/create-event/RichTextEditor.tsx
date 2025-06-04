@@ -2,8 +2,9 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import { useEffect } from 'react';
-import { FaBold, FaItalic, FaStrikethrough, FaListUl, FaListOl, FaImage, FaLink, FaUnlink } from 'react-icons/fa';
+import { useEffect, useRef } from 'react';
+import { FaBold, FaItalic, FaStrikethrough, FaListUl, FaListOl, FaImage, FaLink } from 'react-icons/fa';
+import { supabase } from '@/lib/supabase';
 
 interface RichTextEditorProps {
   value: string;
@@ -30,12 +31,43 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
     },
   });
 
+  // File input ref for image upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Keep editor content in sync with value prop
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value);
     }
   }, [value, editor]);
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Unsupported file type. Please upload a JPG, PNG, GIF, or WebP image.');
+      return;
+    }
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const filePath = `${fileName}`;
+    const { data, error } = await supabase.storage.from('post-media').upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    if (error) {
+      alert('Image upload failed.');
+      return;
+    }
+    const { data: publicUrlData } = supabase.storage.from('post-media').getPublicUrl(filePath);
+    if (publicUrlData?.publicUrl) {
+      editor?.chain().focus().setImage({ src: publicUrlData.publicUrl }).run();
+    } else {
+      alert('Failed to get image URL.');
+    }
+  };
 
   if (!editor) return <div>Loading editor...</div>;
 
@@ -59,15 +91,25 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
             editor.chain().focus().toggleOrderedList().run();
           }
         }} className={toolbarButton(editor.isActive('orderedList'))}><FaListOl /></button>
-        <button type="button" title="Image" onClick={() => {
-          const url = prompt('Enter image URL');
-          if (url) editor.chain().focus().setImage({ src: url }).run();
-        }} className={toolbarButton(false)}><FaImage /></button>
-        <button type="button" title="Link" onClick={() => {
+        <button type="button" title="Add Image" onClick={() => fileInputRef.current?.click()} className={toolbarButton(false)}><FaImage /></button>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleImageUpload}
+        />
+        <button type="button" title="Add Link" onClick={() => {
           const url = prompt('Enter link URL');
-          if (url) editor.chain().focus().toggleLink({ href: url }).run();
+          if (!url) return;
+          if (editor.state.selection.empty) {
+            // No text selected, insert the URL as text and link
+            editor.chain().focus().insertContent(`<a href='${url}' target='_blank' rel='noopener noreferrer'>${url}</a>`).run();
+          } else {
+            // Text selected, apply link
+            editor.chain().focus().toggleLink({ href: url }).run();
+          }
         }} className={toolbarButton(editor.isActive('link'))}><FaLink /></button>
-        <button type="button" title="Unlink" onClick={() => editor.chain().focus().unsetLink().run()} className={toolbarButton(false)}><FaUnlink /></button>
       </div>
       <EditorContent editor={editor} className="bg-white/5 rounded min-h-[120px] p-2 text-white focus:outline-none rich-text-content" />
     </div>

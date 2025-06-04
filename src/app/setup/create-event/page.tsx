@@ -2,6 +2,7 @@
 import localFont from 'next/font/local';
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import RichTextEditor from './RichTextEditor';
 
 // Initialize Supabase client
 // Replace with your actual Supabase URL and public key
@@ -20,16 +21,6 @@ const spaceGroteskMed = localFont({
 });
 
 export default function CreateEvent() {
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [category, setCategory] = useState('');
-  const [media_url, setMediaUrl] = useState('');
-  const [location, setLocation] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  // Allowed categories based on the database constraint
   const allowedCategories = [
     'general',
     'looking-for-musicians',
@@ -39,11 +30,27 @@ export default function CreateEvent() {
     'promotion',
   ];
 
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [category, setCategory] = useState('general');
+  const [media_url, setMediaUrl] = useState('');
+  const [location, setLocation] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    // Validate category
+    if (!allowedCategories.includes(category)) {
+      setError('Please select a valid category.');
+      setLoading(false);
+      return;
+    }
 
     // Get the authenticated user session
     const { data: { session } } = await supabase.auth.getSession();
@@ -79,7 +86,7 @@ export default function CreateEvent() {
       // Optionally clear form or redirect
       setTitle('');
       setBody('');
-      setCategory('');
+      setCategory('general');
       setMediaUrl('');
       setLocation('');
     }
@@ -103,7 +110,7 @@ export default function CreateEvent() {
         </div>
         <div className="flex flex-col">
           <label htmlFor="body" className="text-white mb-2">Description</label>
-          <textarea id="body" name="body" rows={4} value={body} onChange={(e) => setBody(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" required></textarea>
+          <RichTextEditor value={body} onChange={setBody} />
         </div>
         <div className="flex flex-col">
           <label className="text-white mb-2">Category</label>

@@ -40,3 +40,23 @@ body {
 .rich-text-content li {
   margin-bottom: 0.25em;
 }
+
+.rich-text-content a {
+  color: #7F5AF0; /* JamSesh primary purple */
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.rich-text-content a:hover {
+  color: #3d00b6; /* JamSesh dark purple */
+  text-decoration: underline;
+}
+
+.rich-text-content img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 1em auto;
+  border-radius: 0.5em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}

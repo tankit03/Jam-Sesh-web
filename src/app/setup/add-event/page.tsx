@@ -143,18 +143,6 @@ export default function AddEvent() {
     }
   };
 
-  const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
-    try {
-      const { error } = await supabase.from('posts').delete().eq('id', eventId);
-      if (error) throw error;
-      setEvents(events.filter(ev => ev.id !== eventId));
-      if (editingEvent && editingEvent.id === eventId) closeEditModal();
-    } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to delete event');
-    }
-  };
-
   return (
     <div className="p-8">
       <h1 className={`text-4xl font-bold mb-4 text-white ${russoOne.className}`}>
@@ -186,7 +174,7 @@ export default function AddEvent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} />
+              <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} onEdit={editingEvent && editingEvent.id === event.id ? undefined : (userId && event.user_id === userId ? () => setEditingEvent(event) : undefined)} />
             ))}
           </div>
         )}
@@ -263,7 +251,6 @@ export default function AddEvent() {
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex justify-between gap-2">
                 <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600">Cancel</button>
-                <button type="button" onClick={() => handleDelete(editingEvent.id)} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Delete</button>
                 <button type="submit" className="px-4 py-2 rounded bg-[#7F5AF0] text-white hover:bg-[#6841c6]" disabled={saving}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
