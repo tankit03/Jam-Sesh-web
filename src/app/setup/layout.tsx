@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import localFont from 'next/font/local'
+import { FaMusic, FaMapMarkedAlt, FaListUl, FaPlus, FaUser, FaSignOutAlt } from 'react-icons/fa'
 
 const russoOne = localFont({
   src: '../../../fonts/RussoOne-Regular.ttf',
@@ -69,8 +70,8 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
   }
 
   return (
-    <div className={`h-full ${isMinimized ? 'w-20' : 'w-64'} bg-white/10 backdrop-blur-lg text-white p-6 flex flex-col transition-all duration-300 ease-in-out rounded-xl border border-white/20`}>
-      <div className="flex justify-between items-center mb-6">
+    <div className={`min-h-screen ${isMinimized ? 'w-20' : 'w-64'} bg-[#1E1E2C] text-white flex flex-col transition-all duration-300 ease-in-out border-r border-white/20 p-6`}>
+      <div className={`flex mb-6 ${isMinimized ? 'flex-col items-center' : 'flex-row justify-between items-center'}`}>
         {/* Close Button */}
         <button 
           onClick={toggleMinimize}
@@ -78,9 +79,11 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
         >
           {isMinimized ? '→' : '×'}{/* Change icon based on state */}
         </button>
-        {!isMinimized && ( // Hide logo when minimized
+        {isMinimized ? (
+          <FaMusic size={28} className="text-[#7F5AF0] mt-2" />
+        ) : (
           <div className={`text-2xl font-bold ${russoOne.className}`}>
-             <span className="text-[#7F5AF0]">Jam</span>Sesh
+            <span className="text-[#7F5AF0]">Jam</span>Sesh
           </div>
         )}
       </div>
@@ -98,27 +101,27 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
       <nav className={`flex-1 space-y-4 ${russoOne.className}`}>
         <Link 
           href="/setup/maps" 
-          className={`block py-3 px-4 rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/maps') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'} ${isMinimized ? 'flex justify-center' : ''}`}
+          className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/maps') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? 'M' : 'Event Maps'}{/* Abbreviate when minimized */}
+          {isMinimized ? <FaMapMarkedAlt size={22} /> : 'Event Maps'}
         </Link>
         <Link 
           href="/setup/events" 
-          className={`block py-3 px-4 rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/events') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'} ${isMinimized ? 'flex justify-center' : ''}`}
+          className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/events') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? 'E' : 'All Events'}{/* Abbreviate when minimized */}
+          {isMinimized ? <FaListUl size={22} /> : 'All Events'}
         </Link>
         <Link 
           href="/setup/add-event" 
-          className={`block py-3 px-4 rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/add-event') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'} ${isMinimized ? 'flex justify-center' : ''}`}
+          className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/add-event') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? '+' : 'Add Events'}{/* Abbreviate when minimized */}
+          {isMinimized ? <FaPlus size={22} /> : 'Add Events'}
         </Link>
         <Link 
           href="/setup/profile" 
-          className={`block py-3 px-4 rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/profile') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'} ${isMinimized ? 'flex justify-center' : ''}`}
+          className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/profile') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? 'P' : 'Profile'}{/* Abbreviate when minimized */}
+          {isMinimized ? <FaUser size={22} /> : 'Profile'}
         </Link>
       </nav>
       
@@ -126,9 +129,9 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
       <div className={`${russoOne.className}`}>
         <button
           onClick={handleLogout}
-          className={`w-full text-left py-3 px-4 hover:bg-white/10 rounded-lg transition-colors duration-200 text-lg ${isMinimized ? 'flex justify-center' : ''}`}
+          className={`w-full hover:bg-white/10 rounded-lg transition-colors duration-200 text-lg ${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'}`}
         >
-          {isMinimized ? 'L' : 'Logout'}{/* Abbreviate when minimized */}
+          {isMinimized ? <FaSignOutAlt size={22} /> : 'Logout'}
         </button>
       </div>
     </div>
@@ -161,9 +164,9 @@ export default function ProtectedLayout({
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] flex p-4 pt-14">
+    <div className="min-h-screen bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] flex">
       <Sidebar isMinimized={isSidebarMinimized} toggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)} />
-      <main className="flex-1 transition-all duration-300 ease-in-out">{/* Removed margin-left classes */}
+      <main className="flex-1 p-4 pt-14 transition-all duration-300 ease-in-out">{/* Main content now has padding */}
         {children}
       </main>
     </div>
