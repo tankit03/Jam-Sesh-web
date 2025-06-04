@@ -140,21 +140,16 @@ export default function AllEvents() {
               </div>
             )}
             <h2 className={`text-lg font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h2>
-            <p
-              className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`}
+            <div
+              className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden rich-text-content`}
               style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxHeight: '3em',
-                whiteSpace: 'pre-line',
+                maxHeight: '12em',
+                overflow: 'auto',
+                whiteSpace: 'normal',
                 wordBreak: 'break-word',
               }}
-            >
-              {event.body.replace(/<[^>]+>/g, '')}
-            </p>
+              dangerouslySetInnerHTML={{ __html: event.body }}
+            />
             <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
               <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
               <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.created_at).toLocaleDateString()}</span>
