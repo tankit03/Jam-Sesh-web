@@ -25,6 +25,7 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname();
   const [username, setUsername] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -33,20 +34,24 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
       if (session) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, avatar_url')
           .eq('id', session.user.id)
           .single()
 
         if (error) {
-          console.error('Error fetching username:', error)
-          setUsername('Error') // Display an error or default
+          console.error('Error fetching profile:', error)
+          setUsername('Error')
+          setAvatarUrl(null)
         } else if (data) {
           setUsername(data.username)
+          setAvatarUrl(data.avatar_url)
         } else {
-          setUsername('No Username') // Handle case where no profile is found
+          setUsername('No Username')
+          setAvatarUrl(null)
         }
       } else {
         setUsername('Guest')
+        setAvatarUrl(null)
       }
       setLoading(false)
     }
@@ -90,8 +95,12 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
       
       {/* Profile Section */}
       <div className={`flex items-center mb-6 pb-6 border-b border-white/20 ${spaceGroteskMed.className}`}>
-        {/* Placeholder for Profile Picture */}
-        <div className="w-10 h-10 bg-gray-500 rounded-full mr-3 flex-shrink-0"></div>
+        {/* Profile Picture */}
+        <img
+          src={avatarUrl || '/default-avatar.png'}
+          alt="Profile"
+          className="w-10 h-10 rounded-full object-cover mr-3 flex-shrink-0 bg-gray-500 border-2 border-[#7F5AF0]"
+        />
         {!isMinimized && (
           <span className="text-lg font-semibold truncate">{username}</span> // Truncate long usernames
         )}
