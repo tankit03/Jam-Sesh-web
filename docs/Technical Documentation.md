@@ -115,9 +115,11 @@ Below is a visual representation of the JamSesh system architecture:
 ## 6. Known Issues & Future Work
 - No automated tests (manual testing only)
 - No production deployment (prototype only)
-- Some features (group profiles, interactive poster board, music integration) are stretch goals. Check Features And Future Work for more info
+- Some features (group profiles, interactive poster board, music integration) are stretch goals.
 - UI/UX polish and accessibility improvements are ongoing
 - **Documentation may become outdated as the project evolves.** Please review and update this document as features or architecture change.
+
+See the [Features and Future Work](docs/Features%20and%20Future%20Work.md) document for a detailed list of implemented features, known issues, and planned future work.
 
 ---
 
