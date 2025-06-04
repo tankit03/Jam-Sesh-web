@@ -19,7 +19,6 @@ The goal is to foster collaboration, discovery, and connection among musicians w
 - Forum-style posts with categories (e.g., "Looking for Musicians", "Show Announcement")
 - Location-based feed
 - Media embedding (images, audio/video links)
-- Responsive, mobile-friendly design
 
 ---
 
@@ -109,7 +108,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Check the [Next.js docs](https://nextjs.org/docs)
 - Check the [Supabase docs](https://supabase.com/docs)
 - Check the [Tailwind CSS docs](https://tailwindcss.com/docs)
-- Ask your team or instructor for help
 
 ---
 
