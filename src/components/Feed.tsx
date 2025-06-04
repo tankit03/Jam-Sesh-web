@@ -15,7 +15,7 @@ export type Post = {
   };
 };
 
-export default function Feed({ location = 'All' }: { location?: string }) {
+export default function Feed({ location = 'All', onEditPost }: { location?: string, onEditPost?: (post: any) => void }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export default function Feed({ location = 'All' }: { location?: string }) {
                   <div className="absolute right-0 mt-2 w-32 bg-[#1a1333] border border-[#3d00b6]/40 rounded shadow-lg z-10">
                     <button
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-[#3d00b6]/30"
-                      onClick={() => { alert(`Edit post ${post.id}`); setMenuOpenId(null); }}
+                      onClick={() => { if (onEditPost) onEditPost(post); setMenuOpenId(null); }}
                     >
                       Edit
                     </button>

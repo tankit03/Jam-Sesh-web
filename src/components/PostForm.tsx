@@ -17,6 +17,7 @@ export default function PostForm({
 }: {
   onSuccess?: () => void,
   initialValues?: {
+    id?: string
     title?: string
     body?: string
     category?: string
@@ -50,15 +51,29 @@ export default function PostForm({
       return
     }
     setSubmitting(true)
-    const { error } = await supabase.from('posts').insert([
-      {
+    let error;
+    if (initialValues.id) {
+      console.log('Attempting to update post with id:', initialValues.id);
+      const { data, error: updateError } = await supabase.from('posts').update({
         title,
         body,
         category,
-        user_id: user.id,
         // media_url: '',
-      },
-    ])
+      }).eq('id', initialValues.id);
+      console.log('Update result:', data, updateError);
+      error = updateError;
+    } else {
+      // Create new post
+      ({ error } = await supabase.from('posts').insert([
+        {
+          title,
+          body,
+          category,
+          user_id: user.id,
+          // media_url: '',
+        },
+      ]));
+    }
     setSubmitting(false)
     if (!error) {
       setShowSuccess(true)

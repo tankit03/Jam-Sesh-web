@@ -21,6 +21,8 @@ const Select = dynamic(() => import('react-select'), { ssr: false })
 export default function HomePage() {
   const [location, setLocation] = useState('')
   const [showPostModal, setShowPostModal] = useState(false)
+  const [editPost, setEditPost] = useState<any | null>(null)
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0)
 
   return (
     <div className="min-h-screen flex flex-col bg-[#1a1333] text-white">
@@ -73,11 +75,30 @@ export default function HomePage() {
             Make a Post
           </button>
         </div>
-        <Modal isOpen={showPostModal} onClose={() => setShowPostModal(false)}>
-          <PostForm onSuccess={() => setShowPostModal(false)} />
+        <Modal isOpen={showPostModal} onClose={() => { setShowPostModal(false); setEditPost(null); }}>
+          <PostForm
+            onSuccess={() => {
+              setShowPostModal(false);
+              setEditPost(null);
+              setFeedRefreshKey(k => k + 1);
+            }}
+            initialValues={editPost ? {
+              id: editPost.id,
+              title: editPost.title,
+              body: editPost.body,
+              category: editPost.category,
+            } : {}}
+          />
         </Modal>
         <div className="flex-1 flex flex-col justify-center">
-          <Feed location={location || 'All'} />
+          <Feed
+            key={feedRefreshKey}
+            location={location || 'All'}
+            onEditPost={(post) => {
+              setEditPost(post);
+              setShowPostModal(true);
+            }}
+          />
         </div>
       </main>
     </div>
