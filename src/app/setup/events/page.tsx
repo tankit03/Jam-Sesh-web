@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import localFont from 'next/font/local'
 import { supabase } from '@/lib/supabase'
-import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter, FaUserCircle } from 'react-icons/fa'
+import { IoMdClose } from 'react-icons/io'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -43,6 +44,7 @@ export default function AllEvents() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -124,50 +126,77 @@ export default function AllEvents() {
         </div>
       </div>
       <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>Preview all events or filter by location and category</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-0 gap-y-3 justify-start">
         {filteredEvents.map((event) => (
           <div
             key={event.id}
-            className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3"
+            className="bg-white rounded-2xl shadow-md border border-gray-200 flex flex-col overflow-hidden p-0"
+            style={{ width: '320px', height: '440px', margin: '0 auto' }}
+            onClick={() => setSelectedEvent(event)}
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => { if (e.key === 'Enter') setSelectedEvent(event); }}
+            style={{ width: '320px', height: '440px', margin: '0 auto', cursor: 'pointer' }}
           >
             {event.media_url && (
-              <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2">
+              <div className="w-full" style={{ height: '300px', background: '#f3f4f6' }}>
                 <img
                   src={event.media_url}
                   alt={event.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  style={{ objectFit: 'contain', width: '100%', height: '100%', borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem' }}
                 />
               </div>
             )}
-            <h2 className={`text-lg font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h2>
-            <p
-              className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`}
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxHeight: '3em',
-                whiteSpace: 'pre-line',
-                wordBreak: 'break-word',
-              }}
-            >
-              {event.body.replace(/<[^>]+>/g, '')}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
-              <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-              <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.created_at).toLocaleDateString()}</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 items-center">
-              <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
-              <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
+            <div className="flex flex-col flex-1 px-6 pt-5 pb-3 overflow-hidden">
+              <h2 className={`text-2xl font-bold text-black mb-2 text-left truncate ${russoOne.className}`}>{event.title}</h2>
+              <p className={`text-gray-700 text-base mb-4 text-left overflow-hidden ${spaceGroteskMed.className}`} style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
+              <div className="mt-auto flex flex-col gap-1 text-left">
+                <span className="flex items-center text-gray-500 text-sm mb-1"><FaCalendarAlt className="mr-2" />{new Date(event.created_at).toLocaleDateString()}</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
       {filteredEvents.length === 0 && (
         <p className={`text-gray-500 mt-8 ${spaceGroteskMed.className}`}>No events found. Try a different search or filter.</p>
+      )}
+      {/* Modal Popup for Event Details */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-[#18181b] rounded-2xl shadow-2xl p-8 max-w-lg w-full relative text-white">
+            <button onClick={() => setSelectedEvent(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-white focus:outline-none" aria-label="Close modal" title="Close modal">
+              <IoMdClose />
+            </button>
+            {selectedEvent.media_url && (
+              <div className="w-full mb-6" style={{ height: '180px', background: '#23232b', borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem', overflow: 'hidden' }}>
+                <img
+                  src={selectedEvent.media_url}
+                  alt={selectedEvent.title}
+                  className="w-full h-full"
+                  style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+                />
+              </div>
+            )}
+            <h2 className={`text-4xl font-bold mb-4 text-center ${russoOne.className}`}>{selectedEvent.title}</h2>
+            <div className="flex flex-col gap-2 items-center mb-6">
+              <span className="flex items-center gap-2 text-lg"><FaCalendarAlt /> {new Date(selectedEvent.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              <span className="flex items-center gap-2 text-lg"><FaMapMarkerAlt /> {selectedEvent.location}</span>
+            </div>
+            <div className="mb-6">
+              <h3 className="uppercase text-xs text-gray-400 font-bold mb-1 tracking-wider">About Event</h3>
+              <p className="text-base text-gray-200 mb-1">{selectedEvent.body.replace(/<[^>]+>/g, '')}</p>
+            </div>
+            <div className="mb-6">
+              <h3 className="uppercase text-xs text-gray-400 font-bold mb-1 tracking-wider">Hosted By</h3>
+              <div className="flex items-center gap-3">
+                <FaUserCircle className="text-3xl text-[#7F5AF0]" />
+                <span className="text-lg font-semibold">{selectedEvent.profiles?.username || 'Anonymous'}</span>
+              </div>
+            </div>
+            {/* Attendees section (add real data here in the future) */}
+          </div>
+        </div>
       )}
     </div>
   );

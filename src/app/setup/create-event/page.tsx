@@ -1,6 +1,6 @@
 "use client";
 import localFont from 'next/font/local';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
@@ -28,6 +28,9 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterPreview, setPosterPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Allowed categories based on the database constraint
   const allowedCategories = [
@@ -56,6 +59,26 @@ export default function CreateEvent() {
 
     const user_id = session.user.id;
 
+    let uploadedPosterUrl = '';
+    if (posterFile) {
+      const cleanName = posterFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const filePath = `${user_id}/${Date.now()}-${cleanName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('event-posters')
+        .upload(filePath, posterFile, { upsert: true });
+      if (uploadError) {
+        setError(`Failed to upload poster: ${uploadError.message}${uploadError.details ? ' - ' + uploadError.details : ''}`);
+        console.log(uploadError?.message, uploadError?.details);
+        setLoading(false);
+        return;
+      }
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('event-posters')
+        .getPublicUrl(filePath);
+      uploadedPosterUrl = urlData.publicUrl;
+    }
+
     const { data, error } = await supabase
       .from('posts')
       .insert([
@@ -64,31 +87,31 @@ export default function CreateEvent() {
           title: title,
           body: body,
           category: category,
-          media_url: media_url,
+          media_url: uploadedPosterUrl || media_url,
           location: location 
         },
       ]);
 
     if (error) {
-      // console.error('Error creating event:', error);
       console.error('Supabase error details:', JSON.stringify(error, null, 2));
       setError('Failed to create event. Please try again.');
     } else {
-      console.log('Event created successfully:', data);
       setSuccess(true);
-      // Optionally clear form or redirect
       setTitle('');
       setBody('');
       setCategory('');
       setMediaUrl('');
       setLocation('');
+      setPosterFile(null);
+      setPosterPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 min-h-screen flex flex-col">
       <h1 className={`text-4xl font-bold mb-4 text-white ${russoOne.className}`}>
         Create New <span className="text-[#7F5AF0]">Event</span>
       </h1>
@@ -96,43 +119,72 @@ export default function CreateEvent() {
         Fill out the details to create your JamSesh event.
       </p>
 
-      <form onSubmit={handleSubmit} className="max-w-md bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 space-y-4">
-        <div className="flex flex-col">
-          <label htmlFor="title" className="text-white mb-2">Title</label>
-          <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" required />
-        </div>
-        <div className="flex flex-col">
-          <label htmlFor="body" className="text-white mb-2">Description</label>
-          <textarea id="body" name="body" rows={4} value={body} onChange={(e) => setBody(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" required></textarea>
-        </div>
-        <div className="flex flex-col">
-          <label className="text-white mb-2">Category</label>
-          <div className="flex flex-wrap gap-2">
-            {allowedCategories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                className={`px-3 py-1 rounded-full text-sm ${category === cat ? 'bg-[#7F5AF0] text-white' : 'bg-gray-700 text-gray-300'} transition-colors`}
-                onClick={() => setCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
+      <form
+        onSubmit={handleSubmit}
+        className="w-full bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 shadow-xl"
+      >
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col">
+            <label htmlFor="title" className="text-white mb-2">Title</label>
+            <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className="p-3 rounded bg-white/20 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#7F5AF0]" required />
+          </div>
+          <div className="flex flex-col flex-1">
+            <label htmlFor="body" className="text-white mb-2">Description</label>
+            <textarea id="body" name="body" rows={8} value={body} onChange={(e) => setBody(e.target.value)} className="p-3 rounded bg-white/20 text-white border border-white/10 resize-none focus:outline-none focus:ring-2 focus:ring-[#7F5AF0]" required></textarea>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-white mb-2">Event Poster</label>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={e => {
+                if (e.target.files && e.target.files[0]) {
+                  setPosterFile(e.target.files[0]);
+                  setPosterPreview(URL.createObjectURL(e.target.files[0]));
+                }
+              }}
+              className="p-2 rounded bg-white/20 text-white border border-white/10"
+              title="Upload event poster image"
+              placeholder="Choose an image file"
+            />
+            {posterPreview && (
+              <img src={posterPreview} alt="Poster Preview" className="mt-2 rounded-lg max-h-48 object-contain border border-white/20" />
+            )}
           </div>
         </div>
-        <div className="flex flex-col">
-          <label htmlFor="media_url" className="text-white mb-2">Media URL</label>
-          <input type="text" id="media_url" name="media_url" value={media_url} onChange={(e) => setMediaUrl(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" />
+        <div className="flex flex-col gap-6 justify-between">
+          <div className="flex flex-col">
+            <label className="text-white mb-2">Category</label>
+            <div className="flex flex-wrap gap-2">
+              {allowedCategories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`px-3 py-1 rounded-full text-sm ${category === cat ? 'bg-[#7F5AF0] text-white' : 'bg-gray-700 text-gray-300'} transition-colors`}
+                  onClick={() => setCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="media_url" className="text-white mb-2">Media URL</label>
+            <input type="text" id="media_url" name="media_url" value={media_url} onChange={(e) => setMediaUrl(e.target.value)} className="p-3 rounded bg-white/20 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#7F5AF0]" />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="location" className="text-white mb-2">Location</label>
+            <input type="text" id="location" name="location" value={location} onChange={(e) => setLocation(e.target.value)} className="p-3 rounded bg-white/20 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#7F5AF0]" />
+          </div>
+          <div className="flex flex-col mt-4">
+            <button type="submit" className={`bg-[#7F5AF0] text-white p-3 rounded ${spaceGroteskMed.className} transition-colors hover:bg-[#6841c6]`} disabled={loading}>
+              {loading ? 'Creating...' : 'Create Event'}
+            </button>
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+            {success && <p className="text-green-500 mt-2">Event created successfully!</p>}
+          </div>
         </div>
-        <div className="flex flex-col">
-          <label htmlFor="location" className="text-white mb-2">Location</label>
-          <input type="text" id="location" name="location" value={location} onChange={(e) => setLocation(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" />
-        </div>
-        <button type="submit" className={`bg-[#7F5AF0] text-white p-2 rounded ${spaceGroteskMed.className}`} disabled={loading}>
-          {loading ? 'Creating...' : 'Create Event'}
-        </button>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
-        {success && <p className="text-green-500 mt-2">Event created successfully!</p>}
       </form>
     </div>
   );
