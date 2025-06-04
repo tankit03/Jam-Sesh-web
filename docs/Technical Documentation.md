@@ -119,7 +119,7 @@ Below is a visual representation of the JamSesh system architecture:
 - UI/UX polish and accessibility improvements are ongoing
 - **Documentation may become outdated as the project evolves.** Please review and update this document as features or architecture change.
 
-See the [Features and Future Work](docs/Features%20and%20Future%20Work.md) document for a detailed list of implemented features, known issues, and planned future work.
+See the [Features and Future Work](Features%20and%20Future%20Work.md) document for a detailed list of implemented features, known issues, and planned future work.
 
 ---
 
