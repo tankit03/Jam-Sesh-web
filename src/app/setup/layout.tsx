@@ -63,14 +63,14 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
 
   if (loading) {
     return (
-      <div className="h-screen w-64 bg-[#1E1E2C] text-white p-6 flex flex-col items-center justify-center">
+      <div className="h-screen w-64 bg-[#23272F] text-white p-6 flex flex-col items-center justify-center">
         <p className={`${spaceGroteskMed.className}`}>Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className={`min-h-screen ${isMinimized ? 'w-20' : 'w-64'} bg-[#1E1E2C] text-white flex flex-col transition-all duration-300 ease-in-out border-r border-white/20 p-6`}>
+    <div className={`fixed left-0 top-0 h-screen z-30 ${isMinimized ? 'w-20' : 'w-64'} bg-[#23272F] text-white flex flex-col transition-all duration-300 ease-in-out border-r border-white/20 p-6`}>
       <div className={`flex mb-6 ${isMinimized ? 'flex-col items-center' : 'flex-row justify-between items-center'}`}>
         {/* Close Button */}
         <button 
@@ -166,7 +166,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] flex">
       <Sidebar isMinimized={isSidebarMinimized} toggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)} />
-      <main className="flex-1 p-4 pt-14 transition-all duration-300 ease-in-out">{/* Main content now has padding */}
+      <main className={`flex-1 p-4 pt-14 transition-all duration-300 ease-in-out ${isSidebarMinimized ? 'ml-20' : 'ml-64'}`}>{/* Main content now has left margin */}
         {children}
       </main>
     </div>
