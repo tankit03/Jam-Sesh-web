@@ -28,3 +28,15 @@ body {
 .bg-gradient-auth {
   background: linear-gradient(180deg, #492B62 0%, #1E1E2C 42%, #39214D 68%, #1E1E25 92%);
 }
+
+.rich-text-content ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+}
+.rich-text-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5em;
+}
+.rich-text-content li {
+  margin-bottom: 0.25em;
+}
