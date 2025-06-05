@@ -60,3 +60,16 @@ body {
   border-radius: 0.5em;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
+
+/* Make TipTap's editable area fill the parent and remove default border/background */
+.ProseMirror {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  width: 100%;
+  min-height: 100px;
+  color: inherit;
+  font-size: inherit;
+  box-shadow: none !important;
+  padding: 0;
+}

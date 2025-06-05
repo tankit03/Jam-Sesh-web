@@ -72,7 +72,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
   if (!editor) return <div>Loading editor...</div>;
 
   return (
-    <div className="bg-white/10 border border-white/20 rounded-xl p-2">
+    <div className="relative group">
       <div className="mb-2 flex flex-wrap gap-2 items-center bg-white/5 p-2 rounded-lg">
         <button type="button" title="Bold" onClick={() => editor.chain().focus().toggleBold().run()} className={toolbarButton(editor.isActive('bold'))}><FaBold /></button>
         <button type="button" title="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} className={toolbarButton(editor.isActive('italic'))}><FaItalic /></button>
@@ -111,7 +111,9 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
           }
         }} className={toolbarButton(editor.isActive('link'))}><FaLink /></button>
       </div>
-      <EditorContent editor={editor} className="bg-white/5 rounded min-h-[120px] p-2 text-white focus:outline-none rich-text-content" />
+      <div className="transition-all rounded border border-white/10 bg-white/20 min-h-[120px] w-full p-2 text-white focus-within:border-[#7F5AF0] focus-within:ring-2 focus-within:ring-[#7F5AF0]/40">
+        <EditorContent editor={editor} className="bg-transparent w-full h-full outline-none rich-text-content" />
+      </div>
     </div>
   );
 } 
