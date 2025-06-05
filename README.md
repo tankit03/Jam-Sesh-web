@@ -56,10 +56,10 @@ yarn install
 ### 4. Configure Environment Variables
 Create a `.env.local` file in the root directory with the following:
 ```
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SUPABASE_URL= supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY= supabase-anon-key
 ```
-You can find these in your [Supabase project settings](https://app.supabase.com/).
+
 
 ### 5. Run the Development Server
 ```bash
