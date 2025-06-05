@@ -94,6 +94,23 @@ const LocationPickerMap = ({ latitude, longitude, setLatitude, setLongitude }: {
   );
 };
 
+async function getCityStateFromLatLng(lat: number, lng: number): Promise<string | null> {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'JamSeshApp/1.0 (your-email@example.com)'
+    }
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const city = data.address.city || data.address.town || data.address.village || data.address.hamlet || data.address.county;
+  const state = data.address.state || data.address.region;
+  if (city && state) return `${city}, ${state}`;
+  if (city) return city;
+  if (state) return state;
+  return null;
+}
+
 interface EventFormProps {
   initialValues?: {
     title?: string;
@@ -112,6 +129,7 @@ interface EventFormProps {
     longitude?: number;
     thumbnail_url?: string;
     event_datetime?: string;
+    location?: string;
   }) => Promise<void> | void;
   loading?: boolean;
   error?: string | null;
@@ -138,9 +156,9 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       : ''
   );
 
-  // Geolocate when 'Where?' is toggled on
+  // Geolocate when 'Where?' is toggled on, but only for new events (no initial lat/lng)
   useEffect(() => {
-    if (showMapFields) {
+    if (showMapFields && !initialValues.latitude && !initialValues.longitude) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -191,11 +209,16 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       alert('Please select a valid category.');
       return;
     }
+    let locationValue = '';
+    if (showMapFields && latitude && longitude) {
+      locationValue = (await getCityStateFromLatLng(Number(latitude), Number(longitude))) || '';
+    }
     await onSubmit({
       title,
       body,
       category,
       thumbnail_url: thumbnailUrl,
+      location: locationValue,
       ...(showMapFields && latitude && longitude
         ? {
             latitude: latitude ? Number(latitude) : undefined,
