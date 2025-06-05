@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import L from 'leaflet';
 import { supabase } from '@/lib/supabase';
@@ -34,20 +34,24 @@ const markerIcon = new L.Icon({
 });
 
 // Custom marker icon for thumbnail pins
-function createThumbnailPinIcon(thumbnailUrl: string, hovered: boolean = false, title?: string) {
+function createThumbnailPinIcon(thumbnailUrl: string, hovered: boolean = false) {
+  const safeUrl =
+    typeof thumbnailUrl === 'string' && thumbnailUrl.trim() !== ''
+      ? thumbnailUrl
+      : '/default-thumb.svg';
+  // Use a single root div, no undefined values, no extra tags
+  const html =
+    '<div class="pin-outer">' +
+      '<div class="pin-inner">' +
+        `<img src="${safeUrl}" alt="Event Thumbnail" />` +
+      '</div>' +
+      '<div class="pin-tip"></div>' +
+    '</div>';
   return L.divIcon({
-    className: `custom-thumbnail-pin${hovered ? ' morphing' : ''}`,
-    html: `
-      <div class="pin-outer">
-        <div class="pin-inner">
-          <img src="${thumbnailUrl}" alt="Event Thumbnail" />
-        </div>
-        <div class="pin-title">${title || ''}</div>
-        <div class="pin-tip"></div>
-      </div>
-    `,
-    iconSize: hovered ? [200, 140] : [48, 64],
-    iconAnchor: hovered ? [100, 140] : [24, 64],
+    className: `custom-thumbnail-pin${hovered ? ' grow' : ''}`,
+    html,
+    iconSize: [48, 64],
+    iconAnchor: [24, 64],
     popupAnchor: [0, -64],
   });
 }
@@ -77,6 +81,7 @@ export default function EventMaps() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hoveredPinId, setHoveredPinId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -140,12 +145,15 @@ export default function EventMaps() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className={`text-3xl font-bold mb-6 text-white ${russoOne.className}`}>
-        Event <span className="text-[#7F5AF0]">Maps</span>
+    <div className="p-2 md:p-4 lg:p-6 pt-0">
+      <h1 className={`text-3xl font-bold mb-2 text-white ${russoOne.className} mt-0`}>
+        Event <span className="text-[#7F5AF0]">Map</span>
       </h1>
-      <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>See all events on the map. Hover a pin for a preview, click for details.</p>
-      <div className="w-full h-[500px] rounded-lg overflow-hidden border border-white/20 bg-white/5">
+      <p className={`text-gray-300 mb-2 ${spaceGroteskMed.className}`}>See all events on the map. Click a pin for details.</p>
+      <div
+        className="w-full rounded-lg overflow-hidden border border-white/20 bg-white/5 relative"
+        style={{ height: '80vh' }}
+      >
         <MapContainer
           key={`event-maps-${mapCenter[0]}-${mapCenter[1]}`}
           center={mapCenter}
@@ -164,13 +172,12 @@ export default function EventMaps() {
                 position={[ev.latitude, ev.longitude]}
                 icon={createThumbnailPinIcon(
                   typeof ev.thumbnail_url === 'string' && ev.thumbnail_url.trim() !== '' ? ev.thumbnail_url : '/default-thumb.svg',
-                  hoveredEventId === ev.id,
-                  ev.title
+                  hoveredPinId === ev.id
                 )}
                 eventHandlers={{
-                  mouseover: () => setHoveredEventId(ev.id),
-                  mouseout: () => setHoveredEventId(null),
                   click: () => handlePinClick(ev),
+                  mouseover: () => setHoveredPinId(ev.id),
+                  mouseout: () => setHoveredPinId(null),
                 }}
               />
             ) : null

@@ -301,7 +301,12 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {hostedEvents.length === 0 && <p className="text-gray-400">No hosted events yet.</p>}
           {hostedEvents.map(event => (
-            <EventCard key={event.id} event={{ ...event, user_id: userId || '', profiles: { username: profile?.username || '' } }} currentUserId={userId} />
+            <EventCard
+              key={event.id}
+              event={{ ...event, user_id: userId || '', profiles: { username: profile?.username || '' } }}
+              currentUserId={userId}
+              onEdit={ev => {/* Optionally handle edit here if needed */}}
+            />
           ))}
         </div>
       </div>

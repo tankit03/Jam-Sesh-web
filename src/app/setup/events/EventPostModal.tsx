@@ -110,8 +110,12 @@ export default function EventPostModal({ event, open, onClose, currentUserId, on
         <h2 className={`text-2xl font-bold text-black mb-2 ${russoOne.className}`}>{event.title}</h2>
         <div className="flex flex-wrap gap-3 mb-3 text-gray-600 text-sm items-center">
           <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-          <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.created_at).toLocaleDateString()}</span>
-          <span className="px-2 py-1 rounded-full bg-gray-200 text-black text-xs font-semibold">{event.category.replace(/-/g, ' ')}</span>
+          {event.event_datetime && (
+            <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.event_datetime).toLocaleDateString()}</span>
+          )}
+          {event.category && (
+            <span className="px-2 py-1 rounded-full bg-gray-200 text-black text-xs font-semibold">{event.category.replace(/-/g, ' ')}</span>
+          )}
           <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
         </div>
         <div
