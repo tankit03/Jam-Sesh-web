@@ -21,7 +21,7 @@ interface Event {
   title: string;
   body: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
   location: string;
   created_at: string;
   user_id: string;
@@ -93,7 +93,7 @@ export default function AllEvents() {
     title: string;
     body: string;
     category: string;
-    media_url: string;
+    thumbnail_url: string;
     location: string;
   }) => {
     if (!editEvent) return;
@@ -106,7 +106,7 @@ export default function AllEvents() {
         title: values.title,
         body: values.body,
         category: values.category,
-        media_url: values.media_url,
+        thumbnail_url: values.thumbnail_url,
         location: values.location,
       })
       .eq('id', editEvent.id);

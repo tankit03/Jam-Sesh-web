@@ -18,7 +18,7 @@ export interface EventCardData {
   title: string;
   body: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
   location: string;
   created_at: string;
   user_id: string;
@@ -119,10 +119,10 @@ export default function EventCard({ event, currentUserId, onEdit }: EventCardPro
           )}
         </div>
       )}
-      {event.media_url && (
+      {event.thumbnail_url && (
         <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2">
           <img
-            src={event.media_url}
+            src={event.thumbnail_url}
             alt={event.title}
             className="w-full h-full object-cover"
           />

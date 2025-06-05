@@ -68,7 +68,7 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
     const filePath = `${fileName}`;
-    const { error } = await supabase.storage.from('event-thumbnails').upload(filePath, file, {
+    const { error } = await supabase.storage.from('post-media').upload(filePath, file, {
       cacheControl: '3600',
       upsert: false,
     });
@@ -77,7 +77,7 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       setUploading(false);
       return;
     }
-    const { data: publicUrlData } = supabase.storage.from('event-thumbnails').getPublicUrl(filePath);
+    const { data: publicUrlData } = supabase.storage.from('post-media').getPublicUrl(filePath);
     if (publicUrlData?.publicUrl) {
       setThumbnailUrl(publicUrlData.publicUrl);
     } else {

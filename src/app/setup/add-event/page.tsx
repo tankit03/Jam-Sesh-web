@@ -25,7 +25,7 @@ interface Event {
   created_at: string;
   location: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
   user_id?: string;
   profiles?: {
     username: string;
@@ -134,7 +134,7 @@ export default function MyEvents() {
           title: editForm.title,
           body: editForm.body,
           category: editForm.category,
-          media_url: editForm.media_url,
+          thumbnail_url: editForm.thumbnail_url,
           location: editForm.location,
         })
         .eq('id', editingEvent.id);
@@ -225,7 +225,7 @@ export default function MyEvents() {
                         title: values.title,
                         body: values.body,
                         category: values.category,
-                        media_url: values.media_url,
+                        thumbnail_url: values.thumbnail_url,
                         location: values.location,
                       })
                       .eq('id', editingEvent.id);

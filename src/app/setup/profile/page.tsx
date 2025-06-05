@@ -28,7 +28,7 @@ interface Event {
   title: string;
   body: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
   location: string;
   created_at: string;
   latitude?: number;
@@ -153,4 +153,4 @@ export default function Profile() {
       </div>
     </div>
   )
-} 
+}
