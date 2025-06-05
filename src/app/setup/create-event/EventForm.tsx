@@ -93,8 +93,8 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       <button type="submit" className={`bg-[#7F5AF0] text-white p-2 rounded ${spaceGroteskMed.className}`} disabled={loading}>
         {loading ? 'Saving...' : 'Save Event'}
       </button>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">Event saved successfully!</p>}
+      {error && <p className="text-red-500 mt-2 text-center">{error}</p>}
+      {success && <p className="text-green-500 mt-2 text-center">Event saved successfully!</p>}
     </form>
   );
 } 

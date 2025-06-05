@@ -25,6 +25,8 @@ export interface EventCardData {
   profiles?: {
     username: string;
   };
+  latitude?: number;
+  longitude?: number;
 }
 
 interface EventCardProps {

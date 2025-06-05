@@ -28,6 +28,8 @@ interface Event {
   profiles?: {
     username: string;
   };
+  latitude?: number;
+  longitude?: number;
 }
 
 const allowedCategories = [

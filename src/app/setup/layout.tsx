@@ -124,7 +124,7 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
           href="/setup/add-event" 
           className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/add-event') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? <FaPlus size={22} /> : 'Add Events'}
+          {isMinimized ? <FaPlus size={22} /> : 'My Events'}
         </Link>
         <Link 
           href="/setup/profile" 

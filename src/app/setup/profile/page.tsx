@@ -31,6 +31,8 @@ interface Event {
   media_url: string;
   location: string;
   created_at: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function Profile() {
