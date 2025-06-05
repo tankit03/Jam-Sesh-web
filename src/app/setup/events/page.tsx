@@ -199,7 +199,7 @@ export default function AllEvents() {
         </div>
       </div>
       <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>Preview all events or filter by location and category</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-0 gap-y-3 justify-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((event) => (
           <EventCard
             key={event.id}
