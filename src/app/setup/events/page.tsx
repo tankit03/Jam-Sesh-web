@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter } from 'react-icons/fa'
 import EventForm from '../create-event/EventForm'
 import EventCard from './EventCard'
+import EventPostModal from './EventPostModal'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -47,11 +48,16 @@ export default function AllEvents() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editEvent, setEditEvent] = useState<Event | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -93,8 +99,11 @@ export default function AllEvents() {
     title: string;
     body: string;
     category: string;
-    thumbnail_url: string;
-    location: string;
+    latitude?: number;
+    longitude?: number;
+    thumbnail_url?: string;
+    event_datetime?: string;
+    location?: string;
   }) => {
     if (!editEvent) return;
     setEditLoading(true);
@@ -106,8 +115,11 @@ export default function AllEvents() {
         title: values.title,
         body: values.body,
         category: values.category,
-        thumbnail_url: values.thumbnail_url,
-        location: values.location,
+        thumbnail_url: values.thumbnail_url ?? editEvent.thumbnail_url,
+        location: values.location ?? editEvent.location,
+        latitude: values.latitude ?? editEvent.latitude,
+        longitude: values.longitude ?? editEvent.longitude,
+        event_datetime: values.event_datetime ?? null,
       })
       .eq('id', editEvent.id);
     if (error) {
@@ -115,9 +127,27 @@ export default function AllEvents() {
     } else {
       setEditSuccess(true);
       setEditEvent(null);
+      setModalOpen(false);
       fetchEvents();
     }
     setEditLoading(false);
+  };
+
+  // Delete event handler
+  const handleDelete = async () => {
+    if (!selectedEvent) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    const { error } = await supabase.from('posts').delete().eq('id', selectedEvent.id);
+    if (error) {
+      setDeleteError('Failed to delete event.');
+    } else {
+      setShowDeleteConfirm(false);
+      setModalOpen(false);
+      setSelectedEvent(null);
+      fetchEvents();
+    }
+    setDeleteLoading(false);
   };
 
   if (loading) {
@@ -175,7 +205,15 @@ export default function AllEvents() {
             key={event.id}
             event={{ ...event, profiles: event.profiles || { username: 'Anonymous' } }}
             currentUserId={userId}
-            onEdit={userId && event.user_id === userId ? () => setEditEvent(event) : undefined}
+            onEdit={event => {
+              setEditEvent(event);
+              setModalOpen(false);
+            }}
+            onDelete={event => {
+              setSelectedEvent(event);
+              setShowDeleteConfirm(true);
+              setModalOpen(false);
+            }}
           />
         ))}
       </div>
@@ -200,6 +238,39 @@ export default function AllEvents() {
               error={editError}
               success={editSuccess}
             />
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-700 text-xl"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteLoading}
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-black">Delete Event</h2>
+            <p className="mb-4 text-gray-700">Are you sure you want to delete <span className="font-semibold">{selectedEvent.title}</span>? This action cannot be undone.</p>
+            {deleteError && <p className="text-red-500 mb-2">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
