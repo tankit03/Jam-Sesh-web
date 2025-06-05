@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import L from 'leaflet';
 import { supabase } from '@/lib/supabase';
 import localFont from 'next/font/local';
+import EventPostModal from '../events/EventPostModal';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -33,19 +34,20 @@ const markerIcon = new L.Icon({
 });
 
 // Custom marker icon for thumbnail pins
-function createThumbnailPinIcon(thumbnailUrl: string) {
+function createThumbnailPinIcon(thumbnailUrl: string, hovered: boolean = false, title?: string) {
   return L.divIcon({
-    className: 'custom-thumbnail-pin',
+    className: `custom-thumbnail-pin${hovered ? ' morphing' : ''}`,
     html: `
       <div class="pin-outer">
         <div class="pin-inner">
           <img src="${thumbnailUrl}" alt="Event Thumbnail" />
         </div>
+        <div class="pin-title">${title || ''}</div>
         <div class="pin-tip"></div>
       </div>
     `,
-    iconSize: [48, 64],
-    iconAnchor: [24, 64],
+    iconSize: hovered ? [200, 140] : [48, 64],
+    iconAnchor: hovered ? [100, 140] : [24, 64],
     popupAnchor: [0, -64],
   });
 }
@@ -57,12 +59,47 @@ interface Event {
   latitude?: number;
   longitude?: number;
   thumbnail_url?: string;
+  body?: string;
+  category?: string;
+  user_id?: string;
+  profiles?: { username: string };
+  location?: string;
+  created_at?: string;
 }
 
 export default function EventMaps() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const mapRef = useRef<L.Map | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([37.0902, -95.7129]);
+  const [mapZoom, setMapZoom] = useState(4);
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id || null);
+    });
+  }, []);
+
+  // Geolocate user on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          setMapZoom(12);
+          if (mapRef.current) {
+            mapRef.current.setView([pos.coords.latitude, pos.coords.longitude], 12);
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -86,17 +123,33 @@ export default function EventMaps() {
     }
   }, [events]);
 
+  // Pin click handler: fetch full post
+  const handlePinClick = async (ev: Event) => {
+    setModalLoading(true);
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`*, profiles:user_id (username)`)
+      .eq('id', ev.id)
+      .single();
+    if (!error && data) {
+      setSelectedEvent({ ...data });
+    } else {
+      setSelectedEvent({ ...ev }); // fallback to minimal data
+    }
+    setModalLoading(false);
+  };
+
   return (
     <div className="p-8">
       <h1 className={`text-3xl font-bold mb-6 text-white ${russoOne.className}`}>
         Event <span className="text-[#7F5AF0]">Maps</span>
       </h1>
-      <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>See all events on the map. Click a pin for details.</p>
+      <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>See all events on the map. Hover a pin for a preview, click for details.</p>
       <div className="w-full h-[500px] rounded-lg overflow-hidden border border-white/20 bg-white/5">
         <MapContainer
-          key="event-maps"
-          center={[37.0902, -95.7129]}
-          zoom={4}
+          key={`event-maps-${mapCenter[0]}-${mapCenter[1]}`}
+          center={mapCenter}
+          zoom={mapZoom}
           style={{ width: '100%', height: '100%' }}
           scrollWheelZoom={true}
         >
@@ -105,27 +158,38 @@ export default function EventMaps() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {events.map(ev => (
-            <Marker
-              key={ev.id}
-              position={[ev.latitude!, ev.longitude!]}
-              icon={createThumbnailPinIcon(ev.thumbnail_url || '/default-thumb.png')}
-            >
-              <Popup>
-                <div>
-                  <div className="font-bold text-base mb-1">{ev.title}</div>
-                  {ev.event_datetime && (
-                    <div className="text-xs text-gray-700 mb-1">
-                      {new Date(ev.event_datetime).toLocaleString()}
-                    </div>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
+            (typeof ev.latitude === 'number' && typeof ev.longitude === 'number' && !isNaN(ev.latitude) && !isNaN(ev.longitude)) ? (
+              <Marker
+                key={ev.id}
+                position={[ev.latitude, ev.longitude]}
+                icon={createThumbnailPinIcon(
+                  typeof ev.thumbnail_url === 'string' && ev.thumbnail_url.trim() !== '' ? ev.thumbnail_url : '/default-thumb.svg',
+                  hoveredEventId === ev.id,
+                  ev.title
+                )}
+                eventHandlers={{
+                  mouseover: () => setHoveredEventId(ev.id),
+                  mouseout: () => setHoveredEventId(null),
+                  click: () => handlePinClick(ev),
+                }}
+              />
+            ) : null
           ))}
         </MapContainer>
       </div>
       {loading && <p className="text-white mt-4">Loading events...</p>}
       {!loading && events.length === 0 && <p className="text-gray-400 mt-4">No events with locations yet.</p>}
+      {modalLoading && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="text-white text-xl font-bold">Loading post...</div>
+        </div>
+      )}
+      <EventPostModal
+        event={selectedEvent as any}
+        open={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        currentUserId={userId}
+      />
     </div>
   );
 } 
