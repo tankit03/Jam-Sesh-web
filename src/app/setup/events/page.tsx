@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react'
 import localFont from 'next/font/local'
 import { supabase } from '@/lib/supabase'
-import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter, FaUserCircle } from 'react-icons/fa'
-import { IoMdClose } from 'react-icons/io'
+import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaFilter } from 'react-icons/fa'
+import EventForm from '../create-event/EventForm'
+import EventCard from './EventCard'
+import EventPostModal from './EventPostModal'
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -20,13 +22,15 @@ interface Event {
   title: string;
   body: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
   location: string;
   created_at: string;
   user_id: string;
-  profiles: {
+  profiles?: {
     username: string;
   };
+  latitude?: number;
+  longitude?: number;
 }
 
 const allowedCategories = [
@@ -44,10 +48,23 @@ export default function AllEvents() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editEvent, setEditEvent] = useState<Event | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchEvents();
+    // Get current user ID
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id || null);
+    });
   }, []);
 
   const fetchEvents = async () => {
@@ -76,6 +93,62 @@ export default function AllEvents() {
     const matchesCategory = category ? event.category === category : true;
     return matchesSearch && matchesCategory;
   });
+
+  // Edit event handler
+  const handleEditSubmit = async (values: {
+    title: string;
+    body: string;
+    category: string;
+    latitude?: number;
+    longitude?: number;
+    thumbnail_url?: string;
+    event_datetime?: string;
+    location?: string;
+  }) => {
+    if (!editEvent) return;
+    setEditLoading(true);
+    setEditError(null);
+    setEditSuccess(false);
+    const { error } = await supabase
+      .from('posts')
+      .update({
+        title: values.title,
+        body: values.body,
+        category: values.category,
+        thumbnail_url: values.thumbnail_url ?? editEvent.thumbnail_url,
+        location: values.location ?? editEvent.location,
+        latitude: values.latitude ?? editEvent.latitude,
+        longitude: values.longitude ?? editEvent.longitude,
+        event_datetime: values.event_datetime ?? null,
+      })
+      .eq('id', editEvent.id);
+    if (error) {
+      setEditError('Failed to update event.');
+    } else {
+      setEditSuccess(true);
+      setEditEvent(null);
+      setModalOpen(false);
+      fetchEvents();
+    }
+    setEditLoading(false);
+  };
+
+  // Delete event handler
+  const handleDelete = async () => {
+    if (!selectedEvent) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    const { error } = await supabase.from('posts').delete().eq('id', selectedEvent.id);
+    if (error) {
+      setDeleteError('Failed to delete event.');
+    } else {
+      setShowDeleteConfirm(false);
+      setModalOpen(false);
+      setSelectedEvent(null);
+      fetchEvents();
+    }
+    setDeleteLoading(false);
+  };
 
   if (loading) {
     return (
@@ -128,73 +201,76 @@ export default function AllEvents() {
       <p className={`text-gray-300 mb-6 ${spaceGroteskMed.className}`}>Preview all events or filter by location and category</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-0 gap-y-3 justify-start">
         {filteredEvents.map((event) => (
-          <div
+          <EventCard
             key={event.id}
-            className="bg-white rounded-2xl shadow-md border border-gray-200 flex flex-col overflow-hidden p-0"
-            style={{ width: '320px', height: '440px', margin: '0 auto' }}
-            onClick={() => setSelectedEvent(event)}
-            role="button"
-            tabIndex={0}
-            onKeyPress={e => { if (e.key === 'Enter') setSelectedEvent(event); }}
-            style={{ width: '320px', height: '440px', margin: '0 auto', cursor: 'pointer' }}
-          >
-            {event.media_url && (
-              <div className="w-full" style={{ height: '300px', background: '#f3f4f6' }}>
-                <img
-                  src={event.media_url}
-                  alt={event.title}
-                  className="w-full h-full"
-                  style={{ objectFit: 'contain', width: '100%', height: '100%', borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem' }}
-                />
-              </div>
-            )}
-            <div className="flex flex-col flex-1 px-6 pt-5 pb-3 overflow-hidden">
-              <h2 className={`text-2xl font-bold text-black mb-2 text-left truncate ${russoOne.className}`}>{event.title}</h2>
-              <p className={`text-gray-700 text-base mb-4 text-left overflow-hidden ${spaceGroteskMed.className}`} style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
-              <div className="mt-auto flex flex-col gap-1 text-left">
-                <span className="flex items-center text-gray-500 text-sm mb-1"><FaCalendarAlt className="mr-2" />{new Date(event.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
+            event={{ ...event, profiles: event.profiles || { username: 'Anonymous' } }}
+            currentUserId={userId}
+            onEdit={event => {
+              setEditEvent(event);
+              setModalOpen(false);
+            }}
+            onDelete={event => {
+              setSelectedEvent(event);
+              setShowDeleteConfirm(true);
+              setModalOpen(false);
+            }}
+          />
         ))}
       </div>
       {filteredEvents.length === 0 && (
         <p className={`text-gray-500 mt-8 ${spaceGroteskMed.className}`}>No events found. Try a different search or filter.</p>
       )}
-      {/* Modal Popup for Event Details */}
-      {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-[#18181b] rounded-2xl shadow-2xl p-8 max-w-lg w-full relative text-white">
-            <button onClick={() => setSelectedEvent(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-white focus:outline-none" aria-label="Close modal" title="Close modal">
-              <IoMdClose />
+      {/* Edit Modal */}
+      {editEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-[#1a1333] p-6 rounded-xl shadow-xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto">
+            <button
+              className="absolute top-2 right-2 text-white text-xl"
+              onClick={() => setEditEvent(null)}
+            >
+              &times;
             </button>
-            {selectedEvent.media_url && (
-              <div className="w-full mb-6" style={{ height: '180px', background: '#23232b', borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem', overflow: 'hidden' }}>
-                <img
-                  src={selectedEvent.media_url}
-                  alt={selectedEvent.title}
-                  className="w-full h-full"
-                  style={{ objectFit: 'contain', width: '100%', height: '100%' }}
-                />
-              </div>
-            )}
-            <h2 className={`text-4xl font-bold mb-4 text-center ${russoOne.className}`}>{selectedEvent.title}</h2>
-            <div className="flex flex-col gap-2 items-center mb-6">
-              <span className="flex items-center gap-2 text-lg"><FaCalendarAlt /> {new Date(selectedEvent.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-              <span className="flex items-center gap-2 text-lg"><FaMapMarkerAlt /> {selectedEvent.location}</span>
+            <h2 className={`text-2xl font-bold mb-4 text-white ${russoOne.className}`}>Edit Event</h2>
+            <EventForm
+              initialValues={editEvent}
+              onSubmit={handleEditSubmit}
+              loading={editLoading}
+              error={editError}
+              success={editSuccess}
+            />
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-700 text-xl"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteLoading}
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-black">Delete Event</h2>
+            <p className="mb-4 text-gray-700">Are you sure you want to delete <span className="font-semibold">{selectedEvent.title}</span>? This action cannot be undone.</p>
+            {deleteError && <p className="text-red-500 mb-2">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
-            <div className="mb-6">
-              <h3 className="uppercase text-xs text-gray-400 font-bold mb-1 tracking-wider">About Event</h3>
-              <p className="text-base text-gray-200 mb-1">{selectedEvent.body.replace(/<[^>]+>/g, '')}</p>
-            </div>
-            <div className="mb-6">
-              <h3 className="uppercase text-xs text-gray-400 font-bold mb-1 tracking-wider">Hosted By</h3>
-              <div className="flex items-center gap-3">
-                <FaUserCircle className="text-3xl text-[#7F5AF0]" />
-                <span className="text-lg font-semibold">{selectedEvent.profiles?.username || 'Anonymous'}</span>
-              </div>
-            </div>
-            {/* Attendees section (add real data here in the future) */}
           </div>
         </div>
       )}

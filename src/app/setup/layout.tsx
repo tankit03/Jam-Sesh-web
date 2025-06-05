@@ -84,9 +84,7 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
         >
           {isMinimized ? '→' : '×'}{/* Change icon based on state */}
         </button>
-        {isMinimized ? (
-          <FaMusic size={28} className="text-[#7F5AF0] mt-2" />
-        ) : (
+        {!isMinimized && (
           <div className={`text-2xl font-bold ${russoOne.className}`}>
             <span className="text-[#7F5AF0]">Jam</span>Sesh
           </div>
@@ -124,7 +122,7 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
           href="/setup/add-event" 
           className={`${isMinimized ? 'flex justify-center items-center py-3' : 'block py-3 px-4 text-left'} rounded-lg transition-colors duration-200 text-lg ${isActive('/setup/add-event') ? 'bg-[#7F5AF0] text-white' : 'hover:bg-white/10'}`}
         >
-          {isMinimized ? <FaPlus size={22} /> : 'Add Events'}
+          {isMinimized ? <FaPlus size={22} /> : 'My Events'}
         </Link>
         <Link 
           href="/setup/profile" 
@@ -175,7 +173,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] flex">
       <Sidebar isMinimized={isSidebarMinimized} toggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)} />
-      <main className={`flex-1 p-4 pt-14 transition-all duration-300 ease-in-out ${isSidebarMinimized ? 'ml-20' : 'ml-64'}`}>{/* Main content now has left margin */}
+      <main className={`flex-1 p-4 pt-0 transition-all duration-300 ease-in-out ${isSidebarMinimized ? 'ml-20' : 'ml-64'}`}>{/* Main content now has left margin */}
         {children}
       </main>
     </div>

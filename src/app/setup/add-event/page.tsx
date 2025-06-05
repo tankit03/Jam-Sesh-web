@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import EventCard from '../events/EventCard';
+import EventForm from '../create-event/EventForm';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -23,10 +25,17 @@ interface Event {
   created_at: string;
   location: string;
   category: string;
-  media_url: string;
+  thumbnail_url?: string;
+  user_id?: string;
   profiles?: {
     username: string;
   };
+  latitude?: number;
+  longitude?: number;
+}
+
+interface EventEditForm extends Partial<Event> {
+  location?: string;
 }
 
 const allowedCategories = [
@@ -38,15 +47,17 @@ const allowedCategories = [
   'promotion',
 ];
 
-export default function AddEvent() {
+export default function MyEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Event>>({});
+  const [editForm, setEditForm] = useState<EventEditForm>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const initialFocusRef = useRef<HTMLInputElement>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     if (editingEvent && initialFocusRef.current) {
@@ -75,6 +86,7 @@ export default function AddEvent() {
 
         if (error) throw error;
         setEvents(data || []);
+        setUserId(session?.user.id || null);
       } catch (err) {
         console.error('Error fetching events:', err);
       } finally {
@@ -126,8 +138,8 @@ export default function AddEvent() {
           title: editForm.title,
           body: editForm.body,
           category: editForm.category,
-          media_url: editForm.media_url,
-          location: editForm.location,
+          thumbnail_url: editForm.thumbnail_url,
+          location: editForm.location ?? editingEvent.location ?? '',
         })
         .eq('id', editingEvent.id);
       if (error) throw error;
@@ -140,167 +152,108 @@ export default function AddEvent() {
     }
   };
 
-  const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+  const handleCreateEvent = async (values: any) => {
+    setSaving(true);
+    setError(null);
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', eventId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      const user_id = session.user.id;
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([{ ...values, user_id }])
+        .select();
       if (error) throw error;
-      setEvents(events.filter(ev => ev.id !== eventId));
-      if (editingEvent && editingEvent.id === eventId) closeEditModal();
-    } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to delete event');
+      setEvents([...(data || []), ...events]);
+      setShowCreateModal(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create event');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="p-8">
-      <h1 className={`text-4xl font-bold mb-4 text-white ${russoOne.className}`}>
-        Create a New <span className="text-[#7F5AF0]">Event</span>
-      </h1>
-      <p className={`text-lg text-gray-300 mb-8 ${spaceGroteskMed.className}`}>
-        Plan your next JamSesh event.
-      </p>
-
-      <Link href="/setup/create-event">
-        <div className="max-w-sm bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:bg-white/20 transition-colors cursor-pointer">
-          <div className="border-2 border-dashed border-white/30 rounded-lg p-6 flex flex-col items-center justify-center text-center aspect-square">
-            <FaPlus size={40} className="text-white/50 mb-4" />
-            <p className={`text-xl text-white/50 ${spaceGroteskMed.className}`}>
-              + NEW EVENT
-            </p>
+      <h1 className={`text-3xl font-bold mb-2 text-white ${russoOne.className}`}>Your <span className="text-[#7F5AF0]">hosted events</span></h1>
+      <p className={`text-gray-300 mb-8 ${spaceGroteskMed.className}`}>This is where you can create a new event or find all the events you have created.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <button onClick={() => setShowCreateModal(true)}
+          className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 cursor-pointer hover:bg-white/20 transition-colors flex flex-col items-center text-center relative group overflow-hidden h-full shadow-md"
+          style={{ minHeight: '100%' }}
+        >
+          <div className="w-full h-40 rounded-t-xl overflow-hidden bg-white/10 border-b border-white/20 backdrop-blur-lg flex items-center justify-center">
+            <FaPlus size={40} className="text-[#7F5AF0]" />
           </div>
-        </div>
-      </Link>
-
-      <div className="mt-12">
-        <h2 className={`text-2xl font-bold mb-6 text-white ${russoOne.className}`}>
-          Your <span className="text-[#7F5AF0]">Hosted Events</span>
-        </h2>
+          <div className="p-4 w-full flex flex-col items-center">
+            <p className={`text-lg font-bold text-[#7F5AF0] mb-1 truncate w-full ${spaceGroteskMed.className}`}>+ NEW EVENT</p>
+          </div>
+        </button>
         {loading ? (
-          <div className="text-white">Loading events...</div>
+          <div className="text-white col-span-full">Loading events...</div>
         ) : events.length === 0 ? (
-          <div className="text-white/70">No events created yet. Create your first event!</div>
+          <div className="text-white/70 col-span-full">No events created yet. Create your first event!</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <div 
-                key={event.id}
-                className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-center text-center gap-3"
-              >
-                {/* Event Image */}
-                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 mx-auto mb-2 flex items-center justify-center">
-                  {event.media_url ? (
-                    <img src={event.media_url} alt={event.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-400 text-sm">{event.title}</span>
-                  )}
-                </div>
-                {/* Title */}
-                <h3 className={`text-xl font-bold text-black mb-1 ${russoOne.className}`}>{event.title}</h3>
-                {/* Description */}
-                {event.body && (
-                  <p className={`text-gray-800 mb-2 text-left ${spaceGroteskMed.className} break-words overflow-hidden`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxHeight: '3em', whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{event.body.replace(/<[^>]+>/g, '')}</p>
-                )}
-                {/* Location and Date */}
-                <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 mb-1 items-center">
-                  <span className="flex items-center"><FaMapMarkerAlt className="mr-1" />{event.location}</span>
-                  <span className="flex items-center"><FaCalendarAlt className="mr-1" />{formatDate(event.created_at)}</span>
-                </div>
-                {/* Username and Category */}
-                <div className="flex flex-wrap justify-center gap-2 items-center">
-                  <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
-                  <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-black">{event.category.replace(/-/g, ' ')}</span>
-                </div>
-                {/* Edit/Delete Buttons */}
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => openEditModal(event)} aria-label="Edit event">
-                    <FaEdit className="text-gray-400 hover:text-black" />
-                  </button>
-                  <button onClick={() => handleDelete(event.id)} aria-label="Delete event" className="text-red-400 hover:text-red-600 font-bold text-lg">&times;</button>
-                </div>
-              </div>
-            ))}
-          </div>
+          events.map((event) => (
+            <EventCard
+              key={event.id}
+              event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }}
+              currentUserId={userId}
+              onEdit={ev => setEditingEvent(ev)}
+            />
+          ))
         )}
       </div>
-
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] opacity-80" />
+          <div className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col items-center">
+            <button onClick={() => setShowCreateModal(false)} className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl font-bold">&times;</button>
+            <h2 className={`text-2xl font-bold mb-4 mt-8 text-white ${russoOne.className}`}>Create Event</h2>
+            <div className="w-full flex justify-center px-6 pb-8">
+              <EventForm onSubmit={handleCreateEvent} loading={saving} error={error} />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Edit Modal */}
       {editingEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-[#23272F] rounded-xl p-8 w-full max-w-lg shadow-2xl relative">
-            <button onClick={closeEditModal} className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl">&times;</button>
-            <h2 className={`text-2xl font-bold mb-4 text-white ${russoOne.className}`}>Edit Event</h2>
-            <form onSubmit={handleEditSave} className="space-y-4">
-              <div>
-                <label className="block text-white mb-1">Title</label>
-                <input
-                  ref={initialFocusRef}
-                  type="text"
-                  name="title"
-                  value={editForm.title || ''}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-white/20 text-white border border-white/10"
-                  required
-                  placeholder="Event Title"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-1">Description</label>
-                <textarea
-                  name="body"
-                  value={editForm.body || ''}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-white/20 text-white border border-white/10"
-                  rows={3}
-                  placeholder="Event Description"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-1">Category</label>
-                <div className="flex flex-wrap gap-2">
-                  {allowedCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`px-3 py-1 rounded-full text-sm ${editForm.category === cat ? 'bg-[#7F5AF0] text-white' : 'bg-gray-700 text-gray-300'} transition-colors`}
-                      onClick={() => handleCategoryChange(cat)}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-white mb-1">Media URL</label>
-                <input
-                  type="text"
-                  name="media_url"
-                  value={editForm.media_url || ''}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-white/20 text-white border border-white/10"
-                  placeholder="Media URL"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-1">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={editForm.location || ''}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-white/20 text-white border border-white/10"
-                  placeholder="Location"
-                />
-              </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <div className="flex justify-between gap-2">
-                <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600">Cancel</button>
-                <button type="button" onClick={() => handleDelete(editingEvent.id)} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Delete</button>
-                <button type="submit" className="px-4 py-2 rounded bg-[#7F5AF0] text-white hover:bg-[#6841c6]" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] opacity-80" />
+          <div className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col items-center">
+            <button onClick={closeEditModal} className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl font-bold">&times;</button>
+            <h2 className={`text-2xl font-bold mb-4 mt-8 text-white ${russoOne.className}`}>Edit Event</h2>
+            <div className="w-full flex justify-center px-6 pb-8">
+              <EventForm
+                initialValues={editingEvent}
+                onSubmit={async (values) => {
+                  setSaving(true);
+                  setError(null);
+                  try {
+                    const { error } = await supabase
+                      .from('posts')
+                      .update({
+                        title: values.title,
+                        body: values.body,
+                        category: values.category,
+                        thumbnail_url: values.thumbnail_url,
+                        location: (values as any).location ?? editingEvent.location ?? '',
+                      })
+                      .eq('id', editingEvent.id);
+                    if (error) throw error;
+                    setEvents(events.map(ev => ev.id === editingEvent.id ? { ...ev, ...values } : ev));
+                    closeEditModal();
+                  } catch (err: any) {
+                    setError(err.message || 'Failed to update event');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                loading={saving}
+                error={error}
+              />
+            </div>
           </div>
         </div>
       )}
