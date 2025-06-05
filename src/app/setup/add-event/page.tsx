@@ -34,6 +34,10 @@ interface Event {
   longitude?: number;
 }
 
+interface EventEditForm extends Partial<Event> {
+  location?: string;
+}
+
 const allowedCategories = [
   'general',
   'looking-for-musicians',
@@ -47,7 +51,7 @@ export default function MyEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Event>>({});
+  const [editForm, setEditForm] = useState<EventEditForm>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -135,7 +139,7 @@ export default function MyEvents() {
           body: editForm.body,
           category: editForm.category,
           thumbnail_url: editForm.thumbnail_url,
-          location: editForm.location,
+          location: editForm.location ?? editingEvent.location ?? '',
         })
         .eq('id', editingEvent.id);
       if (error) throw error;
@@ -174,12 +178,15 @@ export default function MyEvents() {
       <h1 className={`text-3xl font-bold mb-2 text-white ${russoOne.className}`}>Your <span className="text-[#7F5AF0]">hosted events</span></h1>
       <p className={`text-gray-300 mb-8 ${spaceGroteskMed.className}`}>This is where you can create a new event or find all the events you have created.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <button onClick={() => setShowCreateModal(true)} className="h-full w-full">
-          <div className="h-full w-full bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 hover:bg-white/20 transition-colors cursor-pointer flex flex-col justify-center">
-            <div className="border-2 border-dashed border-white/30 rounded-lg p-6 flex flex-col items-center justify-center text-center aspect-square">
-              <FaPlus size={40} className="text-white/50 mb-4" />
-              <p className={`text-xl text-white/50 ${spaceGroteskMed.className}`}>+ NEW EVENT</p>
-            </div>
+        <button onClick={() => setShowCreateModal(true)}
+          className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 cursor-pointer hover:bg-white/20 transition-colors flex flex-col items-center text-center relative group overflow-hidden h-full shadow-md"
+          style={{ minHeight: '100%' }}
+        >
+          <div className="w-full h-40 rounded-t-xl overflow-hidden bg-white/10 border-b border-white/20 backdrop-blur-lg flex items-center justify-center">
+            <FaPlus size={40} className="text-[#7F5AF0]" />
+          </div>
+          <div className="p-4 w-full flex flex-col items-center">
+            <p className={`text-lg font-bold text-[#7F5AF0] mb-1 truncate w-full ${spaceGroteskMed.className}`}>+ NEW EVENT</p>
           </div>
         </button>
         {loading ? (
@@ -188,7 +195,12 @@ export default function MyEvents() {
           <div className="text-white/70 col-span-full">No events created yet. Create your first event!</div>
         ) : (
           events.map((event) => (
-            <EventCard key={event.id} event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }} currentUserId={userId} onEdit={editingEvent && editingEvent.id === event.id ? undefined : (userId && event.user_id === userId ? () => setEditingEvent(event) : undefined)} />
+            <EventCard
+              key={event.id}
+              event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }}
+              currentUserId={userId}
+              onEdit={ev => setEditingEvent(ev)}
+            />
           ))
         )}
       </div>
@@ -226,7 +238,7 @@ export default function MyEvents() {
                         body: values.body,
                         category: values.category,
                         thumbnail_url: values.thumbnail_url,
-                        location: values.location,
+                        location: (values as any).location ?? editingEvent.location ?? '',
                       })
                       .eq('id', editingEvent.id);
                     if (error) throw error;
