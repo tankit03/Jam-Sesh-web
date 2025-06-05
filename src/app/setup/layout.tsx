@@ -175,7 +175,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] flex">
       <Sidebar isMinimized={isSidebarMinimized} toggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)} />
-      <main className={`flex-1 p-4 pt-14 transition-all duration-300 ease-in-out ${isSidebarMinimized ? 'ml-20' : 'ml-64'}`}>{/* Main content now has left margin */}
+      <main className={`flex-1 p-4 pt-0 transition-all duration-300 ease-in-out ${isSidebarMinimized ? 'ml-20' : 'ml-64'}`}>{/* Main content now has left margin */}
         {children}
       </main>
     </div>
