@@ -66,6 +66,8 @@ Jam Sesh is built as a modern web application, optimized for both desktop and mo
 * **TypeScript** (type-safe JavaScript)
 * **Tailwind CSS** (utility-first CSS framework for styling)
 * **React Icons** (icon library)
+* **TipTap Rich Text Editor** (for post creation/editing)
+* **React Leaflet** (for map and event pinning)
 * **Deployed as a web app** (mobile-friendly, responsive design)
 
 **Backend:**
@@ -98,7 +100,7 @@ The **interactive prototype**  is available here: \[Figma Link\] (we will keep t
 
 2\. **Profile Page** : Customizable user profiles where musicians, artists, and venues can showcase their content, including posts, media, and bio.
 
-3\. **Post Creation** : A page where users can create posts, select categories (musician search, event promotion, media sharing), and include multimedia (audio, video, etc.).
+3\. **Post Creation** : A modal where users can create posts, select categories (musician search, event promotion, media sharing), use a rich text editor (TipTap), upload images, and pin events on a map.
 
 4\. **Search/Filter** : A search function to find musicians, bands, events, or venues by location, genre, or type.
 
@@ -148,7 +150,7 @@ Inspired by MySpace, Jam Sesh aims to give users the ability to deeply personali
 
 ### **Color Scheme**
 
-Our primary color is a bold purple: **#3d00b6**. This will be used as the go-to accent and brand color throughout the app. The overall palette will still feature muted neons, textured blacks, and warm grunge tones, but #3d00b6 serves as the core of our visual identity.
+Our primary color is a bold purple: **#7F5AF0**. This will be used as the go-to accent and brand color throughout the app. The overall palette will still feature muted neons, textured blacks, and warm grunge tones, but #7F5AF0 serves as the core of our visual identity.
 
 Our secondary color is a deep, grayish purple: **#1a1333**. This color is primarily used for backgrounds and empty space, providing a dark, subtle foundation that allows the primary purple and other accent colors to stand out. #1a1333 was chosen for its strong contrast, muted character, and ability to evoke the "textured blacks" and underground vibe described in our design vision.
 
@@ -156,7 +158,7 @@ Our secondary color is a deep, grayish purple: **#1a1333**. This color is primar
 
 | Purpose         | Color Name      | Hex      | Description                                      |
 |-----------------|----------------|----------|--------------------------------------------------|
-| Primary         | Purple          | #3d00b6  | Main accent and brand color                      |
+| Primary         | Purple          | #7F5AF0  | Main accent and brand color                      |
 | Secondary       | Dark Purple     | #1a1333  | Backgrounds, empty space                         |
 | Accent 1        | Electric Teal   | #00ffd0  | CTAs, highlights, energetic accents              |
 | Accent 2        | Neon Pink       | #ff3ec8  | Playful highlights, buttons, or links            |
@@ -180,5 +182,5 @@ Our secondary color is a deep, grayish purple: **#1a1333**. This color is primar
 
 ### **Responsive Design**
 
-Jam Sesh will be a mobile-first application, optimized for iOS and Android devices through Expo. While web accessibility may be considered for future development, our primary focus is on delivering a polished, native mobile experience that showcases the platform's core features at the Engineering Expo. The Expo Go app will facilitate easy testing and demonstration of the application during the expo.
+Jam Sesh is a web-first application, fully responsive and mobile-friendly. The primary focus is on delivering a polished web experience that works great on both desktop and mobile browsers.
 

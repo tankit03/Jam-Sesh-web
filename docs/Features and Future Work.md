@@ -14,6 +14,9 @@
   - Categories (e.g., "Looking for Musicians", "Show", "Share")
   - Location tagging
   - Media embedding (images, audio/video links)
+  - Map-based event pinning and event map view
+  - Rich text editor (TipTap) for posts
+  - Modal-driven event creation and editing
 - Location-based feed (posts organized by city/region)
 - Editable and persistent profile page
 - 3-dots menu on posts for edit/delete (with confirmation modal)

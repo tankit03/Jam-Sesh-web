@@ -71,18 +71,13 @@ const { data, error } = await supabase
 | id           | uuid      | Primary key                       |
 | user_id      | uuid      | Foreign key to profiles.id         |
 | title        | text      | Post title                        |
-| body         | text      | Post content (rich text HTML)      |
+| body         | text      | Post content (rich text HTML, TipTap) |
 | category     | text      | Post category (e.g., 'Show', 'Looking for Musicians') |
 | location     | text      | City or region                    |
+| latitude     | float     | Latitude for map pin              |
+| longitude    | float     | Longitude for map pin             |
+| thumbnail_url| text      | Thumbnail image URL (Supabase Storage) |
 | created_at   | timestamp | Post creation date                 |
-
-### `media` (if used)
-| Column       | Type      | Description                       |
-|--------------|-----------|-----------------------------------|
-| id           | uuid      | Primary key                       |
-| post_id      | uuid      | Foreign key to posts.id            |
-| url          | text      | Media file URL (Supabase Storage)  |
-| type         | text      | 'image', 'audio', 'video', etc.    |
 
 ---
 
@@ -125,3 +120,7 @@ See the [Features and Future Work](Features%20and%20Future%20Work.md) document f
 
 ## 7. Contact & Further Resources
 - See README.md for setup, deployment, and troubleshooting
+
+- **Rich text editing:** Posts use TipTap for formatting and media embedding.
+- **Map/location:** Events can be pinned on a map with latitude/longitude fields.
+- **Modal-driven editing:** All event creation and editing is done via modals with in-line forms.

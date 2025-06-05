@@ -17,13 +17,17 @@ The goal is to foster collaboration, discovery, and connection among musicians w
 ## Features
 - User profiles with avatar, bio, and instrument tags
 - Forum-style posts with categories (e.g., "Looking for Musicians", "Show Announcement")
-- Location-based feed
+- Location-based feed and map-based event discovery
 - Media embedding (images, audio/video links)
+- **Rich text editor (TipTap) for posts**
+- **Map pinning for events and event map view**
+- **Modal-driven event creation and editing**
+- **Custom SVGs for thumbnails and map pins**
 
 ---
 
 ## Tech Stack
-- **Frontend:** Next.js (React), TypeScript, Tailwind CSS
+- **Frontend:** Next.js (React), TypeScript, Tailwind CSS, **TipTap Rich Text Editor**, React Leaflet (maps)
 - **Backend:** Supabase (Postgres DB, Auth, Storage)
 - **Deployment:** Vercel (recommended)
 
