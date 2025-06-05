@@ -32,12 +32,31 @@ const markerIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// Custom marker icon for thumbnail pins
+function createThumbnailPinIcon(thumbnailUrl: string) {
+  return L.divIcon({
+    className: 'custom-thumbnail-pin',
+    html: `
+      <div class="pin-outer">
+        <div class="pin-inner">
+          <img src="${thumbnailUrl}" alt="Event Thumbnail" />
+        </div>
+        <div class="pin-tip"></div>
+      </div>
+    `,
+    iconSize: [48, 64],
+    iconAnchor: [24, 64],
+    popupAnchor: [0, -64],
+  });
+}
+
 interface Event {
   id: string;
   title: string;
   event_datetime?: string;
   latitude?: number;
   longitude?: number;
+  thumbnail_url?: string;
 }
 
 export default function EventMaps() {
@@ -50,7 +69,7 @@ export default function EventMaps() {
       setLoading(true);
       const { data, error } = await supabase
         .from('posts')
-        .select('id, title, event_datetime, latitude, longitude');
+        .select('id, title, event_datetime, latitude, longitude, thumbnail_url');
       if (!error && data) {
         setEvents(data.filter((ev: Event) => ev.latitude && ev.longitude));
       }
@@ -89,7 +108,7 @@ export default function EventMaps() {
             <Marker
               key={ev.id}
               position={[ev.latitude!, ev.longitude!]}
-              icon={markerIcon}
+              icon={createThumbnailPinIcon(ev.thumbnail_url || '/default-thumb.png')}
             >
               <Popup>
                 <div>
