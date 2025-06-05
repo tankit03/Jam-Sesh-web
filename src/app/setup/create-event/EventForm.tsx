@@ -30,6 +30,7 @@ interface EventFormProps {
     latitude?: number;
     longitude?: number;
     thumbnail_url?: string;
+    event_datetime?: string;
   };
   onSubmit: (values: {
     title: string;
@@ -38,6 +39,7 @@ interface EventFormProps {
     latitude?: number;
     longitude?: number;
     thumbnail_url?: string;
+    event_datetime?: string;
   }) => Promise<void> | void;
   loading?: boolean;
   error?: string | null;
@@ -54,6 +56,14 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
   const [uploading, setUploading] = useState(false);
   const [showMapFields, setShowMapFields] = useState(
     initialValues.latitude !== undefined && initialValues.longitude !== undefined
+  );
+  const [showDateTimeField, setShowDateTimeField] = useState(
+    initialValues.event_datetime !== undefined && initialValues.event_datetime !== null
+  );
+  const [eventDateTime, setEventDateTime] = useState(
+    initialValues.event_datetime
+      ? new Date(initialValues.event_datetime).toISOString().slice(0, 16)
+      : ''
   );
 
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +113,9 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
             longitude: longitude ? Number(longitude) : undefined,
           }
         : {}),
+      ...(showDateTimeField && eventDateTime
+        ? { event_datetime: new Date(eventDateTime).toISOString() }
+        : {}),
     });
   };
 
@@ -122,7 +135,9 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       </div>
       <div className="flex flex-col">
         <label htmlFor="body" className="text-white mb-2">Description</label>
-        <RichTextEditor value={body} onChange={setBody} />
+        <div className="w-full">
+          <RichTextEditor value={body} onChange={setBody} />
+        </div>
       </div>
       <div className="flex flex-col">
         <label className="text-white mb-2">Category</label>
@@ -148,7 +163,7 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
           className="accent-[#7F5AF0] w-5 h-5 rounded focus:ring-2 focus:ring-[#7F5AF0]/40 border border-white/20"
         />
         <label htmlFor="showMapFields" className="text-white select-none cursor-pointer">
-          Put me on the map!
+          Where?
         </label>
       </div>
       {showMapFields && (
@@ -161,6 +176,31 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
             <label htmlFor="longitude" className="text-white mb-2">Longitude</label>
             <input type="number" id="longitude" name="longitude" value={longitude} onChange={(e) => setLongitude(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" step="any" />
           </div>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="showDateTimeField"
+          checked={showDateTimeField}
+          onChange={() => setShowDateTimeField((v) => !v)}
+          className="accent-[#7F5AF0] w-5 h-5 rounded focus:ring-2 focus:ring-[#7F5AF0]/40 border border-white/20"
+        />
+        <label htmlFor="showDateTimeField" className="text-white select-none cursor-pointer">
+          When?
+        </label>
+      </div>
+      {showDateTimeField && (
+        <div className="flex flex-col w-full mb-2">
+          <label htmlFor="eventDateTime" className="text-white mb-2">Event Date & Time</label>
+          <input
+            type="datetime-local"
+            id="eventDateTime"
+            name="eventDateTime"
+            value={eventDateTime}
+            onChange={e => setEventDateTime(e.target.value)}
+            className="p-2 rounded bg-white/20 text-white border border-white/10"
+          />
         </div>
       )}
       <button type="submit" className={`bg-[#7F5AF0] text-white p-2 rounded ${spaceGroteskMed.className}`} disabled={loading}>
