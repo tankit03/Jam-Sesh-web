@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import localFont from 'next/font/local';
 import RichTextEditor from './RichTextEditor';
 import { supabase } from '@/lib/supabase';
+import dynamic from 'next/dynamic';
+import L from 'leaflet';
+import { useMapEvents } from 'react-leaflet';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -21,6 +24,75 @@ const allowedCategories = [
   'show-announcement',
   'promotion',
 ];
+
+// Dynamically import MapContainer and Marker to avoid SSR issues
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+
+// Custom purple pin icon for the event form (simple teardrop shape)
+const purplePinIcon = L.divIcon({
+  className: 'custom-form-pin',
+  html: `
+    <svg width="32" height="48" viewBox="0 0 32 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 46C16 46 28 30 16 30C4 30 16 46 16 46Z" fill="#7F5AF0" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="16" r="12" fill="#7F5AF0" stroke="white" stroke-width="2"/>
+    </svg>
+  `,
+  iconSize: [32, 48],
+  iconAnchor: [16, 46],
+  popupAnchor: [0, -46],
+});
+
+// Custom LocationPickerMap component for map logic
+const LocationPickerMap = ({ latitude, longitude, setLatitude, setLongitude }: { latitude: number; longitude: number; setLatitude: (lat: number) => void; setLongitude: (lng: number) => void; }) => {
+  const mapRef = useRef<any>(null);
+
+  // Set mapRef.current after mount
+  const handleMapReady = (mapInstance: L.Map) => {
+    mapRef.current = mapInstance;
+  };
+
+  // Map click handler
+  const MapClickHandler = () => {
+    const map = useMapEvents({
+      click(e) {
+        setLatitude(e.latlng.lat);
+        setLongitude(e.latlng.lng);
+      },
+    });
+    return null;
+  };
+
+  return (
+    <MapContainer
+      key={`event-form-map-${latitude}-${longitude}`}
+      center={[latitude || 37.0902, longitude || -95.7129]}
+      zoom={latitude && longitude ? 13 : 4}
+      style={{ width: '100%', height: '100%' }}
+      scrollWheelZoom={true}
+    >
+      <TileLayer
+        attribution={'&copy; OpenStreetMap contributors'}
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <MapClickHandler />
+      <Marker
+        position={[latitude || 37.0902, longitude || -95.7129]}
+        icon={purplePinIcon}
+        draggable={true}
+        eventHandlers={{
+          dragend: (e: L.LeafletEvent) => {
+            const marker = e.target as L.Marker;
+            const position = marker.getLatLng();
+            setLatitude(position.lat);
+            setLongitude(position.lng);
+          },
+        }}
+      />
+    </MapContainer>
+  );
+};
 
 interface EventFormProps {
   initialValues?: {
@@ -65,6 +137,23 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
       ? new Date(initialValues.event_datetime).toISOString().slice(0, 16)
       : ''
   );
+
+  // Geolocate when 'Where?' is toggled on
+  useEffect(() => {
+    if (showMapFields) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLatitude(pos.coords.latitude);
+            setLongitude(pos.coords.longitude);
+          },
+          () => {},
+          { enableHighAccuracy: true }
+        );
+      }
+    }
+    // eslint-disable-next-line
+  }, [showMapFields]);
 
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,14 +256,15 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
         </label>
       </div>
       {showMapFields && (
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex flex-col w-full">
-            <label htmlFor="latitude" className="text-white mb-2">Latitude</label>
-            <input type="number" id="latitude" name="latitude" value={latitude} onChange={(e) => setLatitude(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" step="any" />
-          </div>
-          <div className="flex flex-col w-full">
-            <label htmlFor="longitude" className="text-white mb-2">Longitude</label>
-            <input type="number" id="longitude" name="longitude" value={longitude} onChange={(e) => setLongitude(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" step="any" />
+        <div className="flex flex-col gap-2 mb-2">
+          <label className="text-white mb-2">Select location on map (click to place pin, drag to fine-tune)</label>
+          <div className="w-full h-64 rounded-lg overflow-hidden border border-white/20">
+            <LocationPickerMap
+              latitude={Number(latitude) || 37.0902}
+              longitude={Number(longitude) || -95.7129}
+              setLatitude={setLatitude}
+              setLongitude={setLongitude}
+            />
           </div>
         </div>
       )}
