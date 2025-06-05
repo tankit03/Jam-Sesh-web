@@ -232,33 +232,33 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="max-w-md bg-white rounded-xl border border-white/20 p-6 space-y-4">
       <div className="flex flex-col items-center">
-        <label htmlFor="thumbnail" className="text-white mb-2">Event Thumbnail</label>
+        <label htmlFor="thumbnail" className="text-black mb-2">Event Thumbnail</label>
         {thumbnailUrl && (
           <img src={thumbnailUrl} alt="Event Thumbnail" className="mb-2 rounded-lg w-32 h-32 object-cover border border-white/20" />
         )}
-        <input type="file" id="thumbnail" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleThumbnailChange} className="p-2 rounded bg-white/20 text-white border border-white/10 w-full" disabled={uploading} />
-        {uploading && <p className="text-gray-300 text-sm mt-1">Uploading...</p>}
+        <input type="file" id="thumbnail" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleThumbnailChange} className="p-2 rounded bg-white text-black border border-white/10 w-full" disabled={uploading} />
+        {uploading && <p className="text-gray-500 text-sm mt-1">Uploading...</p>}
       </div>
       <div className="flex flex-col">
-        <label htmlFor="title" className="text-white mb-2">Title</label>
-        <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className="p-2 rounded bg-white/20 text-white border border-white/10" required />
+        <label htmlFor="title" className="text-black mb-2">Title</label>
+        <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className="p-2 rounded bg-white text-black border border-white/10" required />
       </div>
       <div className="flex flex-col">
-        <label htmlFor="body" className="text-white mb-2">Description</label>
+        <label htmlFor="body" className="text-black mb-2">Description</label>
         <div className="w-full">
           <RichTextEditor value={body} onChange={setBody} />
         </div>
       </div>
       <div className="flex flex-col">
-        <label className="text-white mb-2">Category</label>
+        <label className="text-black mb-2">Category</label>
         <div className="flex flex-wrap gap-2">
           {allowedCategories.map((cat) => (
             <button
               key={cat}
               type="button"
-              className={`px-3 py-1 rounded-full text-sm ${category === cat ? 'bg-[#7F5AF0] text-white' : 'bg-gray-700 text-gray-300'} transition-colors`}
+              className={`px-3 py-1 rounded-full text-sm ${category === cat ? 'bg-[#7F5AF0] text-white' : 'bg-[#7F5AF0]/10 text-[#7F5AF0]'} transition-colors`}
               onClick={() => setCategory(cat)}
             >
               {cat}
@@ -274,13 +274,13 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
           onChange={() => setShowMapFields((v) => !v)}
           className="accent-[#7F5AF0] w-5 h-5 rounded focus:ring-2 focus:ring-[#7F5AF0]/40 border border-white/20"
         />
-        <label htmlFor="showMapFields" className="text-white select-none cursor-pointer">
+        <label htmlFor="showMapFields" className="text-black select-none cursor-pointer">
           Where?
         </label>
       </div>
       {showMapFields && (
         <div className="flex flex-col gap-2 mb-2">
-          <label className="text-white mb-2">Select location on map (click to place pin, drag to fine-tune)</label>
+          <label className="text-black mb-2">Select location on map (click to place pin, drag to fine-tune)</label>
           <div className="w-full h-64 rounded-lg overflow-hidden border border-white/20">
             <LocationPickerMap
               latitude={Number(latitude) || 37.0902}
@@ -299,20 +299,20 @@ export default function EventForm({ initialValues = {}, onSubmit, loading = fals
           onChange={() => setShowDateTimeField((v) => !v)}
           className="accent-[#7F5AF0] w-5 h-5 rounded focus:ring-2 focus:ring-[#7F5AF0]/40 border border-white/20"
         />
-        <label htmlFor="showDateTimeField" className="text-white select-none cursor-pointer">
+        <label htmlFor="showDateTimeField" className="text-black select-none cursor-pointer">
           When?
         </label>
       </div>
       {showDateTimeField && (
         <div className="flex flex-col w-full mb-2">
-          <label htmlFor="eventDateTime" className="text-white mb-2">Event Date & Time</label>
+          <label htmlFor="eventDateTime" className="text-black mb-2">Event Date & Time</label>
           <input
             type="datetime-local"
             id="eventDateTime"
             name="eventDateTime"
             value={eventDateTime}
             onChange={e => setEventDateTime(e.target.value)}
-            className="p-2 rounded bg-white/20 text-white border border-white/10"
+            className="p-2 rounded bg-white text-black border border-white/10"
           />
         </div>
       )}

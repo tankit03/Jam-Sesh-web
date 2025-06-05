@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import EventCard from '../events/EventCard';
-import EventForm from '../create-event/EventForm';
+import EventPostModal from '../events/EventPostModal';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -32,6 +32,7 @@ interface Event {
   };
   latitude?: number;
   longitude?: number;
+  event_datetime?: string;
 }
 
 interface EventEditForm extends Partial<Event> {
@@ -57,7 +58,9 @@ export default function MyEvents() {
   const router = useRouter();
   const initialFocusRef = useRef<HTMLInputElement>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view');
+  const [modalEvent, setModalEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     if (editingEvent && initialFocusRef.current) {
@@ -106,50 +109,23 @@ export default function MyEvents() {
     });
   };
 
-  const openEditModal = (event: Event) => {
-    setEditingEvent(event);
-    setEditForm({ ...event });
+  const handleCreateClick = () => {
+    setModalMode('create');
+    setModalEvent(null);
+    setModalOpen(true);
+  };
+
+  const handleEditClick = (event: Event) => {
+    setModalMode('edit');
+    setModalEvent(event);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setModalMode('view');
+    setModalEvent(null);
     setError(null);
-  };
-
-  const closeEditModal = () => {
-    setEditingEvent(null);
-    setEditForm({});
-    setError(null);
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const handleCategoryChange = (cat: string) => {
-    setEditForm({ ...editForm, category: cat });
-  };
-
-  const handleEditSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const { error } = await supabase
-        .from('posts')
-        .update({
-          title: editForm.title,
-          body: editForm.body,
-          category: editForm.category,
-          thumbnail_url: editForm.thumbnail_url,
-          location: editForm.location ?? editingEvent.location ?? '',
-        })
-        .eq('id', editingEvent.id);
-      if (error) throw error;
-      setEvents(events.map(ev => ev.id === editingEvent.id ? { ...ev, ...editForm } as Event : ev));
-      closeEditModal();
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to update event');
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleCreateEvent = async (values: any) => {
@@ -165,9 +141,37 @@ export default function MyEvents() {
         .select();
       if (error) throw error;
       setEvents([...(data || []), ...events]);
-      setShowCreateModal(false);
+      handleModalClose();
     } catch (err: any) {
       setError(err.message || 'Failed to create event');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditEvent = async (values: any) => {
+    if (!modalEvent) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({
+          title: values.title,
+          body: values.body,
+          category: values.category,
+          thumbnail_url: values.thumbnail_url,
+          location: (values as any).location ?? modalEvent.location ?? '',
+          latitude: values.latitude ?? modalEvent.latitude,
+          longitude: values.longitude ?? modalEvent.longitude,
+          event_datetime: values.event_datetime ?? modalEvent.event_datetime,
+        })
+        .eq('id', modalEvent.id);
+      if (error) throw error;
+      setEvents(events.map(ev => ev.id === modalEvent.id ? { ...ev, ...values } : ev));
+      handleModalClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update event');
     } finally {
       setSaving(false);
     }
@@ -178,7 +182,7 @@ export default function MyEvents() {
       <h1 className={`text-3xl font-bold mb-2 text-white ${russoOne.className}`}>Your <span className="text-[#7F5AF0]">hosted events</span></h1>
       <p className={`text-gray-300 mb-8 ${spaceGroteskMed.className}`}>This is where you can create a new event or find all the events you have created.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <button onClick={() => setShowCreateModal(true)}
+        <button onClick={handleCreateClick}
           className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 cursor-pointer hover:bg-white/20 transition-colors flex flex-col items-center text-center relative group overflow-hidden h-full shadow-md"
           style={{ minHeight: '100%' }}
         >
@@ -199,64 +203,21 @@ export default function MyEvents() {
               key={event.id}
               event={{ ...event, user_id: (event as any).user_id || userId || '', body: event.body || '' }}
               currentUserId={userId}
-              onEdit={ev => setEditingEvent(ev)}
+              onEdit={handleEditClick}
             />
           ))
         )}
       </div>
-      {/* Create Event Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] opacity-80" />
-          <div className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col items-center">
-            <button onClick={() => setShowCreateModal(false)} className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl font-bold">&times;</button>
-            <h2 className={`text-2xl font-bold mb-4 mt-8 text-white ${russoOne.className}`}>Create Event</h2>
-            <div className="w-full flex justify-center px-6 pb-8">
-              <EventForm onSubmit={handleCreateEvent} loading={saving} error={error} />
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Edit Modal */}
-      {editingEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#492B62] via-[#1E1E2C] via-[42%] via-[#39214D] via-[68%] to-[#1E1E25] to-[92%] opacity-80" />
-          <div className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-0 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col items-center">
-            <button onClick={closeEditModal} className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl font-bold">&times;</button>
-            <h2 className={`text-2xl font-bold mb-4 mt-8 text-white ${russoOne.className}`}>Edit Event</h2>
-            <div className="w-full flex justify-center px-6 pb-8">
-              <EventForm
-                initialValues={editingEvent}
-                onSubmit={async (values) => {
-                  setSaving(true);
-                  setError(null);
-                  try {
-                    const { error } = await supabase
-                      .from('posts')
-                      .update({
-                        title: values.title,
-                        body: values.body,
-                        category: values.category,
-                        thumbnail_url: values.thumbnail_url,
-                        location: (values as any).location ?? editingEvent.location ?? '',
-                      })
-                      .eq('id', editingEvent.id);
-                    if (error) throw error;
-                    setEvents(events.map(ev => ev.id === editingEvent.id ? { ...ev, ...values } : ev));
-                    closeEditModal();
-                  } catch (err: any) {
-                    setError(err.message || 'Failed to update event');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                loading={saving}
-                error={error}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <EventPostModal
+        event={modalEvent as any}
+        open={modalOpen}
+        onClose={handleModalClose}
+        currentUserId={userId}
+        mode={modalMode}
+        onSubmit={modalMode === 'create' ? handleCreateEvent : handleEditEvent}
+        loading={saving}
+        error={error}
+      />
     </div>
   )
 } 

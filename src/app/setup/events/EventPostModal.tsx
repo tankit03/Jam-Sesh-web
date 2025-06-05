@@ -2,6 +2,7 @@ import { FaMapMarkerAlt, FaCalendarAlt, FaEllipsisV } from 'react-icons/fa';
 import localFont from 'next/font/local';
 import { EventCardData } from './EventCard';
 import { useState, useRef, useEffect } from 'react';
+import EventForm from '../create-event/EventForm';
 
 const russoOne = localFont({
   src: '../../../../fonts/RussoOne-Regular.ttf',
@@ -20,11 +21,20 @@ interface EventPostModalProps {
   currentUserId?: string | null;
   onEdit?: (event: EventCardData) => void;
   onDelete?: (event: EventCardData) => void;
+  mode?: 'view' | 'edit' | 'create';
+  onSubmit?: (values: any) => Promise<void> | void;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export default function EventPostModal({ event, open, onClose, currentUserId, onEdit, onDelete }: EventPostModalProps) {
+export default function EventPostModal({ event, open, onClose, currentUserId, onEdit, onDelete, mode = 'view', onSubmit, loading, error }: EventPostModalProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [editMode, setEditMode] = useState(mode);
+
+  useEffect(() => {
+    setEditMode(mode);
+  }, [mode, open]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -42,9 +52,35 @@ export default function EventPostModal({ event, open, onClose, currentUserId, on
     };
   }, [menuOpen]);
 
-  if (!open || !event) return null;
+  if (!open) return null;
 
-  const isOwner = currentUserId && event.user_id === currentUserId;
+  const isOwner = currentUserId && event && event.user_id === currentUserId;
+
+  // Render EventForm for edit/create modes
+  if (editMode === 'edit' || editMode === 'create') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 relative overflow-y-auto max-h-[90vh] border border-white/20">
+          <button
+            className="absolute top-2 right-2 bg-[#7F5AF0] text-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg hover:scale-110 hover:bg-[#6c3ee6] transition-all text-2xl font-bold focus:outline-none z-20"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+          <h2 className={`text-2xl font-bold mb-4 text-black ${russoOne.className}`}>{editMode === 'edit' ? 'Edit Event' : 'Create Event'}</h2>
+          <EventForm
+            initialValues={editMode === 'edit' ? event || {} : {}}
+            onSubmit={onSubmit || (() => {})}
+            loading={loading}
+            error={error}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
@@ -114,12 +150,12 @@ export default function EventPostModal({ event, open, onClose, currentUserId, on
             <span className="flex items-center"><FaCalendarAlt className="mr-1" />{new Date(event.event_datetime).toLocaleDateString()}</span>
           )}
           {event.category && (
-            <span className="px-2 py-1 rounded-full bg-gray-200 text-black text-xs font-semibold">{event.category.replace(/-/g, ' ')}</span>
+            <span className="px-2 py-1 rounded-full bg-[#7F5AF0]/10 text-[#7F5AF0] text-xs font-semibold">{event.category.replace(/-/g, ' ')}</span>
           )}
-          <span className="text-xs font-semibold text-black">{event.profiles?.username || 'Anonymous'}</span>
+          <span className="text-xs font-semibold text-[#7F5AF0]">{event.profiles?.username || 'Anonymous'}</span>
         </div>
         <div
-          className={`text-gray-900 mb-2 text-left ${spaceGroteskMed.className} break-words rich-text-content`}
+          className={`text-black mb-2 text-left ${spaceGroteskMed.className} break-words rich-text-content`}
           style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
           dangerouslySetInnerHTML={{ __html: event.body }}
         />
