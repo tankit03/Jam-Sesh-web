@@ -84,9 +84,7 @@ function Sidebar({ isMinimized, toggleMinimize }: SidebarProps) {
         >
           {isMinimized ? '→' : '×'}{/* Change icon based on state */}
         </button>
-        {isMinimized ? (
-          <FaMusic size={28} className="text-[#7F5AF0] mt-2" />
-        ) : (
+        {!isMinimized && (
           <div className={`text-2xl font-bold ${russoOne.className}`}>
             <span className="text-[#7F5AF0]">Jam</span>Sesh
           </div>
